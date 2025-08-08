@@ -1,36 +1,33 @@
 'use server'
 
-import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { redirect } from 'next/navigation'
+import Database from 'better-sqlite3'
+import path from 'path'
 
-// Validation schema
+// Define validation schema
 const loginSchema = z.object({
   phone: z.string().min(8).max(8),
   password: z.string().min(1)
 })
 
-export async function loginUser(prevState: any, formData: FormData) {
+// Initialize SQLite database
+function getDatabase() {
+  const dbPath = path.join(process.cwd(), 'data', 'tedris.db')
+  return new Database(dbPath)
+}
+
+export async function submitLogin(prevState: any, formData: FormData) {
   try {
-    // Initialize Supabase client
-    const supabaseUrl = process.env.SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-      return { error: 'Server configuration error' }
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey)
-
     // Extract and validate data
-    const rawData = {
+    const data = {
       phone: formData.get('phone') as string,
       password: formData.get('password') as string
     }
 
     // Validate data
-    const validatedData = loginSchema.parse(rawData)
+    const validatedData = loginSchema.parse(data)
 
     // Additional phone validation
     const phoneNum = parseInt(validatedData.phone)
@@ -38,30 +35,31 @@ export async function loginUser(prevState: any, formData: FormData) {
       return { error: 'Invalid phone number range' }
     }
 
-    // Find user by phone
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('id, phone, password_hash, full_name, user_category, specific_role')
-      .eq('phone', validatedData.phone)
-      .single()
+    // Initialize database
+    const db = getDatabase()
 
-    if (userError || !user) {
+    // Find user by phone
+    const user = db.prepare(`
+      SELECT id, phone, full_name, password_hash, user_category, specific_role
+      FROM users 
+      WHERE phone = ?
+    `).get(validatedData.phone) as any
+
+    db.close()
+
+    if (!user) {
       return { error: 'Invalid phone number or password' }
     }
 
     // Verify password
-    const passwordMatch = await bcrypt.compare(validatedData.password, user.password_hash)
-    
-    if (!passwordMatch) {
+    const isValidPassword = await bcrypt.compare(validatedData.password, user.password_hash)
+
+    if (!isValidPassword) {
       return { error: 'Invalid phone number or password' }
     }
 
-    // In a real app, you would set up session/JWT here
-    // For now, we'll just redirect to a dashboard
-    
-    // You could store user info in cookies or session here
-    // For example, using next-auth or your own session management
-    
+    // In a real app, you would set up proper session management here
+    // For now, we'll just redirect to dashboard
     redirect('/dashboard')
 
   } catch (error) {
