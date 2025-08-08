@@ -31,10 +31,10 @@ function getDatabase() {
   }
 
   const dbPath = path.join(dataDir, 'tedris.db')
-  const db = new Database(dbPath)
+  const database = new Database(dbPath)
   
   // Create users table if it doesn't exist
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       phone TEXT UNIQUE NOT NULL,
@@ -54,7 +54,7 @@ function getDatabase() {
   `)
 
   // Create schools table if it doesn't exist
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS schools (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT UNIQUE NOT NULL,
@@ -66,9 +66,9 @@ function getDatabase() {
   `)
 
   // Insert sample schools if table is empty
-  const schoolCount = db.prepare('SELECT COUNT(*) as count FROM schools').get() as { count: number }
+  const schoolCount = database.prepare('SELECT COUNT(*) as count FROM schools').get() as { count: number }
   if (schoolCount.count === 0) {
-    const insertSchool = db.prepare(`
+    const insertSchool = database.prepare(`
       INSERT INTO schools (name, wilaya, moughataa) VALUES (?, ?, ?)
     `)
     
@@ -94,7 +94,7 @@ function getDatabase() {
     })
   }
 
-  return db
+  return database
 }
 
 export async function submitRegistration(prevState: any, formData: FormData) {
@@ -127,21 +127,21 @@ export async function submitRegistration(prevState: any, formData: FormData) {
     const hashedPassword = await bcrypt.hash(validatedData.password, 12)
 
     // Initialize database
-    const db = getDatabase()
+    const database = getDatabase()
 
     // Check if user already exists
-    const existingUser = db.prepare(`
+    const existingUser = database.prepare(`
       SELECT phone, nni, matricule FROM users 
       WHERE phone = ? OR nni = ? OR matricule = ?
     `).get(validatedData.phone, validatedData.nni, validatedData.matricule)
 
     if (existingUser) {
-      db.close()
+      database.close()
       return { error: 'User already exists with this phone, NNI, or matricule' }
     }
 
     // Insert new user
-    const insertUser = db.prepare(`
+    const insertUser = database.prepare(`
       INSERT INTO users (
         phone, nni, matricule, full_name, password_hash,
         user_category, specific_role, wilaya, moughataa, school, is_new_school
@@ -162,7 +162,7 @@ export async function submitRegistration(prevState: any, formData: FormData) {
       validatedData.isNewSchool ? 1 : 0
     )
 
-    db.close()
+    database.close()
 
     if (result.changes > 0) {
       // Redirect to login page after successful registration
