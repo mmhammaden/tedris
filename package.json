@@ -5,7 +5,6 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
-    "postinstall": "node scripts/init-db.js",
     "lint": "next lint",
     "start": "next start"
   },
@@ -29,19 +28,19 @@
     "react-dom": "^19",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.22.4"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
-    "@types/better-sqlite3": "^7.6.8",
+    "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "autoprefixer": "^10.4.16",
-    "eslint": "^8.53.0",
-    "eslint-config-next": "15.0.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.17.0",
+    "eslint-config-next": "15.2.4",
     "postcss": "^8.5",
-    "tailwindcss": "^3.3.5",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5"
   }
 }

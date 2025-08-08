@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { redirect } from 'next/navigation'
 import Database from 'better-sqlite3'
 import path from 'path'
+import fs from 'fs'
 
 // Define validation schema
 const registrationSchema = z.object({
@@ -23,7 +24,13 @@ const registrationSchema = z.object({
 
 // Initialize SQLite database
 function getDatabase() {
-  const dbPath = path.join(process.cwd(), 'data', 'tedris.db')
+  // Ensure data directory exists
+  const dataDir = path.join(process.cwd(), 'data')
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true })
+  }
+
+  const dbPath = path.join(dataDir, 'tedris.db')
   const db = new Database(dbPath)
   
   // Create users table if it doesn't exist

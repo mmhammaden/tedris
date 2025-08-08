@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 import Database from 'better-sqlite3'
 import path from 'path'
 
-// Define validation schema
+// Validation schema
 const loginSchema = z.object({
   phone: z.string().min(8).max(8),
   password: z.string().min(1)
@@ -18,16 +18,16 @@ function getDatabase() {
   return new Database(dbPath)
 }
 
-export async function submitLogin(prevState: any, formData: FormData) {
+export async function loginUser(prevState: any, formData: FormData) {
   try {
     // Extract and validate data
-    const data = {
+    const rawData = {
       phone: formData.get('phone') as string,
       password: formData.get('password') as string
     }
 
     // Validate data
-    const validatedData = loginSchema.parse(data)
+    const validatedData = loginSchema.parse(rawData)
 
     // Additional phone validation
     const phoneNum = parseInt(validatedData.phone)
@@ -40,26 +40,28 @@ export async function submitLogin(prevState: any, formData: FormData) {
 
     // Find user by phone
     const user = db.prepare(`
-      SELECT id, phone, full_name, password_hash, user_category, specific_role
+      SELECT id, phone, password_hash, full_name, user_category, specific_role
       FROM users 
       WHERE phone = ?
     `).get(validatedData.phone) as any
 
-    db.close()
-
     if (!user) {
+      db.close()
       return { error: 'Invalid phone number or password' }
     }
 
     // Verify password
-    const isValidPassword = await bcrypt.compare(validatedData.password, user.password_hash)
-
-    if (!isValidPassword) {
+    const passwordMatch = await bcrypt.compare(validatedData.password, user.password_hash)
+    
+    if (!passwordMatch) {
+      db.close()
       return { error: 'Invalid phone number or password' }
     }
 
-    // In a real app, you would set up proper session management here
-    // For now, we'll just redirect to dashboard
+    db.close()
+
+    // In a real app, you would set up session/JWT here
+    // For now, we'll just redirect to a dashboard
     redirect('/dashboard')
 
   } catch (error) {
