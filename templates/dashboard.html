@@ -3,7 +3,7 @@
 {% block title %}لوحة التحكم - منصة تدريس{% endblock %}
 
 {% block content %}
-<div x-data="dashboardPage()" class="min-h-screen bg-gray-50">
+<div x-data="dashboardPage()" class="min-h-screen bg-gray-50 fade-in">
      Header 
     <header class="bg-white shadow-sm border-b">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -36,86 +36,277 @@
         </div>
     </header>
 
-     Main Content 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-         Welcome Section 
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2" x-text="text[language].welcome"></h1>
-            <p class="text-gray-600" x-text="text[language].subtitle"></p>
-        </div>
-
-         Quick Actions Grid 
-        <div class="mb-8">
-            <h2 class="text-2xl font-semibold text-gray-900 mb-6" x-text="text[language].quickActions"></h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <template x-for="(action, index) in quickActions" :key="index">
-                    <div class="bg-white rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer p-6">
-                        <div class="flex items-center space-x-3 mb-3">
-                            <div :class="action.color" class="w-10 h-10 rounded-lg flex items-center justify-center">
-                                <i :class="action.icon" class="text-white"></i>
-                            </div>
-                            <h3 class="text-lg font-semibold" x-text="text[language][action.titleKey]"></h3>
-                        </div>
-                        <p class="text-gray-600" x-text="text[language][action.descKey]"></p>
-                    </div>
-                </template>
+     Welcome Header 
+    <div class="bg-gradient-to-r from-primary-600 to-primary-800 rounded-xl text-white p-8 mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold mb-2">
+                    مرحباً، {{ session.user_name }}
+                </h1>
+                <p class="text-primary-100 text-lg">
+                    <i class="fas fa-user-tag ml-2"></i>
+                    {{ session.user_category }}
+                </p>
+            </div>
+            <div class="hidden md:block">
+                <div class="bg-white bg-opacity-20 rounded-full p-4">
+                    <i class="fas fa-user-circle text-4xl"></i>
+                </div>
             </div>
         </div>
-
-         Recent Activity 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-xl font-semibold mb-4" x-text="text[language].recentActivity"></h3>
+    </div>
+    
+     Quick Stats 
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">الملف الشخصي</p>
+                    <p class="text-2xl font-bold text-gray-900">مكتمل</p>
+                </div>
+                <div class="bg-green-100 rounded-full p-3">
+                    <i class="fas fa-check-circle text-xl text-green-600"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">الحالة</p>
+                    <p class="text-2xl font-bold text-gray-900">نشط</p>
+                </div>
+                <div class="bg-blue-100 rounded-full p-3">
+                    <i class="fas fa-user-check text-xl text-blue-600"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">آخر دخول</p>
+                    <p class="text-2xl font-bold text-gray-900">اليوم</p>
+                </div>
+                <div class="bg-purple-100 rounded-full p-3">
+                    <i class="fas fa-clock text-xl text-purple-600"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">الإشعارات</p>
+                    <p class="text-2xl font-bold text-gray-900">3</p>
+                </div>
+                <div class="bg-orange-100 rounded-full p-3">
+                    <i class="fas fa-bell text-xl text-orange-600"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+     Main Content Grid 
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+         Left Column 
+        <div class="lg:col-span-2 space-y-8">
+             Recent Activities 
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-history ml-2 text-primary-600"></i>
+                    الأنشطة الأخيرة
+                </h2>
                 <div class="space-y-4">
-                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <i class="fas fa-book text-blue-600 text-sm"></i>
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                        <div class="bg-green-100 rounded-full p-2 ml-4">
+                            <i class="fas fa-sign-in-alt text-green-600"></i>
                         </div>
                         <div class="flex-1">
-                            <p class="text-sm font-medium">درس جديد متاح</p>
-                            <p class="text-xs text-gray-500">منذ ساعتين</p>
+                            <p class="font-medium text-gray-900">تسجيل دخول جديد</p>
+                            <p class="text-sm text-gray-600">منذ دقائق قليلة</p>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                            <i class="fas fa-file-alt text-green-600 text-sm"></i>
+                    
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                        <div class="bg-blue-100 rounded-full p-2 ml-4">
+                            <i class="fas fa-edit text-blue-600"></i>
                         </div>
                         <div class="flex-1">
-                            <p class="text-sm font-medium">واجب مُسلم</p>
-                            <p class="text-xs text-gray-500">أمس</p>
+                            <p class="font-medium text-gray-900">تحديث الملف الشخصي</p>
+                            <p class="text-sm text-gray-600">منذ يوم واحد</p>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                            <i class="fas fa-bell text-purple-600 text-sm"></i>
+                    
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                        <div class="bg-purple-100 rounded-full p-2 ml-4">
+                            <i class="fas fa-bell text-purple-600"></i>
                         </div>
                         <div class="flex-1">
-                            <p class="text-sm font-medium">رسالة جديدة</p>
-                            <p class="text-xs text-gray-500">منذ 3 أيام</p>
+                            <p class="font-medium text-gray-900">إشعار جديد</p>
+                            <p class="text-sm text-gray-600">منذ يومين</p>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-xl font-semibold mb-4" x-text="text[language].notifications"></h3>
+            
+             Quick Actions 
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-bolt ml-2 text-primary-600"></i>
+                    إجراءات سريعة
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button class="flex items-center p-4 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors text-right">
+                        <div class="bg-primary-100 rounded-full p-3 ml-4">
+                            <i class="fas fa-user-edit text-primary-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900">تحديث الملف الشخصي</p>
+                            <p class="text-sm text-gray-600">تعديل بياناتك الشخصية</p>
+                        </div>
+                    </button>
+                    
+                    <button class="flex items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-right">
+                        <div class="bg-green-100 rounded-full p-3 ml-4">
+                            <i class="fas fa-download text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900">تحميل التقارير</p>
+                            <p class="text-sm text-gray-600">تحميل التقارير الشهرية</p>
+                        </div>
+                    </button>
+                    
+                    <button class="flex items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors text-right">
+                        <div class="bg-blue-100 rounded-full p-3 ml-4">
+                            <i class="fas fa-cog text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900">الإعدادات</p>
+                            <p class="text-sm text-gray-600">تخصيص إعدادات الحساب</p>
+                        </div>
+                    </button>
+                    
+                    <button class="flex items-center p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors text-right">
+                        <div class="bg-orange-100 rounded-full p-3 ml-4">
+                            <i class="fas fa-question-circle text-orange-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900">المساعدة</p>
+                            <p class="text-sm text-gray-600">الحصول على المساعدة</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+         Right Column 
+        <div class="space-y-8">
+             Profile Summary 
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-user ml-2 text-primary-600"></i>
+                    ملخص الملف الشخصي
+                </h2>
                 <div class="space-y-4">
-                    <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p class="text-sm font-medium text-blue-800">اجتماع أولياء الأمور</p>
-                        <p class="text-xs text-blue-600">غداً الساعة 2:00 مساءً</p>
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span class="text-gray-600">الاسم:</span>
+                        <span class="font-medium">{{ session.user_name }}</span>
                     </div>
-                    <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p class="text-sm font-medium text-yellow-800">موعد تسليم الواجب</p>
-                        <p class="text-xs text-yellow-600">خلال يومين</p>
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span class="text-gray-600">الفئة:</span>
+                        <span class="font-medium">{{ session.user_category }}</span>
                     </div>
-                    <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <p class="text-sm font-medium text-green-800">تحديث النظام</p>
-                        <p class="text-xs text-green-600">ميزات جديدة متاحة</p>
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span class="text-gray-600">الحالة:</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            نشط
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                        <span class="text-gray-600">تاريخ التسجيل:</span>
+                        <span class="font-medium">اليوم</span>
+                    </div>
+                </div>
+            </div>
+            
+             Notifications 
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-bell ml-2 text-primary-600"></i>
+                    الإشعارات
+                </h2>
+                <div class="space-y-3">
+                    <div class="flex items-start p-3 bg-blue-50 rounded-lg">
+                        <div class="bg-blue-100 rounded-full p-1 ml-3 mt-1">
+                            <i class="fas fa-info-circle text-xs text-blue-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-900">مرحباً بك في منصة تدريس</p>
+                            <p class="text-xs text-gray-600 mt-1">منذ دقائق قليلة</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start p-3 bg-green-50 rounded-lg">
+                        <div class="bg-green-100 rounded-full p-1 ml-3 mt-1">
+                            <i class="fas fa-check-circle text-xs text-green-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-900">تم تفعيل حسابك بنجاح</p>
+                            <p class="text-xs text-gray-600 mt-1">منذ ساعة واحدة</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start p-3 bg-yellow-50 rounded-lg">
+                        <div class="bg-yellow-100 rounded-full p-1 ml-3 mt-1">
+                            <i class="fas fa-exclamation-triangle text-xs text-yellow-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-900">يرجى تحديث بياناتك</p>
+                            <p class="text-xs text-gray-600 mt-1">منذ يوم واحد</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <button class="w-full text-center text-primary-600 hover:text-primary-700 text-sm font-medium">
+                        عرض جميع الإشعارات
+                    </button>
+                </div>
+            </div>
+            
+             System Status 
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-server ml-2 text-primary-600"></i>
+                    حالة النظام
+                </h2>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-600">خدمة المصادقة</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <i class="fas fa-circle text-xs ml-1"></i>
+                            متاح
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-600">قاعدة البيانات</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <i class="fas fa-circle text-xs ml-1"></i>
+                            متاح
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-600">خدمة التقارير</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <i class="fas fa-circle text-xs ml-1"></i>
+                            متاح
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
 </div>
 
 <script>
@@ -205,5 +396,39 @@ function dashboardPage() {
         ]
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate counters
+    const counters = document.querySelectorAll('.text-2xl.font-bold');
+    counters.forEach(counter => {
+        if (!isNaN(counter.textContent)) {
+            const target = parseInt(counter.textContent);
+            let current = 0;
+            const increment = target / 20;
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    counter.textContent = target;
+                    clearInterval(timer);
+                } else {
+                    counter.textContent = Math.floor(current);
+                }
+            }, 50);
+        }
+    });
+    
+    // Add hover effects to quick action buttons
+    const actionButtons = document.querySelectorAll('button[class*="bg-"][class*="hover:bg-"]');
+    actionButtons.forEach(button => {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.transition = 'transform 0.2s ease';
+        });
+        
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
 </script>
 {% endblock %}

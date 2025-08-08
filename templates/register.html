@@ -1,308 +1,302 @@
 {% extends "base.html" %}
 
-{% block title %}التسجيل - منصة تدريس{% endblock %}
+{% block title %}التسجيل - تدريس{% endblock %}
 
 {% block content %}
-<div x-data="registerPage()" class="min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
-        <div class="p-6 border-b">
-            <div class="flex justify-between items-center">
-                <h2 class="text-2xl font-bold" x-text="text[language].title"></h2>
-                <div class="flex gap-2">
-                    <button @click="language = 'ar'" :class="language === 'ar' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-3 py-1 rounded text-sm">العربية</button>
-                    <button @click="language = 'fr'" :class="language === 'fr' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-3 py-1 rounded text-sm">Français</button>
-                </div>
-            </div>
-            <p class="text-gray-600 mt-2" x-text="text[language].subtitle"></p>
+<div class="max-w-2xl mx-auto fade-in">
+    <div class="bg-white rounded-xl shadow-lg p-8">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">إنشاء حساب جديد</h1>
+            <p class="text-gray-600">املأ البيانات التالية للتسجيل في منصة تدريس</p>
         </div>
         
-        <form method="POST" class="p-6 space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium mb-2" x-text="text[language].phone"></label>
-                    <input type="tel" name="phone" required maxlength="8" pattern="[0-9]{8}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
-                           :placeholder="text[language].phonePlaceholder">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium mb-2" x-text="text[language].nni"></label>
-                    <input type="text" name="nni" required 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           :placeholder="text[language].nniPlaceholder">
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium mb-2" x-text="text[language].matricule"></label>
-                    <input type="text" name="matricule" required 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           :placeholder="text[language].matriculePlaceholder">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium mb-2" x-text="text[language].fullName"></label>
-                    <input type="text" name="fullName" required 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           :placeholder="text[language].fullNamePlaceholder">
-                </div>
-            </div>
-
+        <form method="POST" x-data="registrationForm()" class="space-y-6">
+             Phone Number 
             <div>
-                <label class="block text-sm font-medium mb-2" x-text="text[language].password"></label>
-                <input type="password" name="password" required minlength="6" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                       :placeholder="text[language].passwordPlaceholder">
+                <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-phone ml-2 text-primary-600"></i>
+                    رقم الهاتف
+                </label>
+                <input type="tel" 
+                       id="phone" 
+                       name="phone" 
+                       x-model="form.phone"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                       placeholder="مثال: 22123456"
+                       maxlength="8"
+                       required>
+                <p class="text-xs text-gray-500 mt-1">يجب أن يكون 8 أرقام بين 22000000 و 49999999</p>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium mb-2" x-text="text[language].userCategory"></label>
-                    <select name="userCategory" x-model="userCategory" required 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="" x-text="text[language].userCategoryPlaceholder"></option>
-                        <template x-for="category in categories[language]" :key="category.value">
-                            <option :value="category.value" x-text="category.label"></option>
-                        </template>
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium mb-2" x-text="text[language].specificRole"></label>
-                    <select name="specificRole" required :disabled="!userCategory"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="" x-text="text[language].specificRolePlaceholder"></option>
-                        <template x-for="role in getRoleOptions()" :key="role.value">
-                            <option :value="role.value" x-text="role.label"></option>
-                        </template>
-                    </select>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium mb-2" x-text="text[language].wilaya"></label>
-                    <select name="wilaya" x-model="wilaya" @change="loadMoughataas()" required 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="" x-text="text[language].wilayaPlaceholder"></option>
-                        <template x-for="w in wilayas[language]" :key="w.value">
-                            <option :value="w.value" x-text="w.label"></option>
-                        </template>
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium mb-2" x-text="text[language].moughataa"></label>
-                    <select name="moughataa" x-model="moughataa" required :disabled="!wilaya"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="" x-text="text[language].moughataPlaceholder"></option>
-                        <template x-for="m in moughataas" :key="m.value">
-                            <option :value="m.value" x-text="language === 'ar' ? m.label_ar : m.label_fr"></option>
-                        </template>
-                    </select>
-                </div>
-            </div>
-
+            
+             NNI 
             <div>
-                <label class="block text-sm font-medium mb-2" x-text="text[language].school"></label>
-                <div class="flex gap-2">
-                    <div class="flex-1">
-                        <select x-show="!isNewSchool" name="school" :required="!isNewSchool"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="" x-text="text[language].schoolPlaceholder"></option>
-                            <template x-for="school in schools" :key="school.value">
-                                <option :value="school.value" x-text="school.label"></option>
-                            </template>
-                        </select>
-                        <input x-show="isNewSchool" type="text" name="school" :required="isNewSchool"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               :placeholder="text[language].newSchoolName">
-                    </div>
-                    <button type="button" @click="isNewSchool = !isNewSchool" 
-                            class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50" 
-                            x-text="text[language].newSchool"></button>
-                </div>
-                <input type="hidden" name="isNewSchool" :value="isNewSchool">
+                <label for="nni" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-id-card ml-2 text-primary-600"></i>
+                    رقم التعريف الوطني (NNI)
+                </label>
+                <input type="text" 
+                       id="nni" 
+                       name="nni" 
+                       x-model="form.nni"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                       placeholder="رقم التعريف الوطني"
+                       required>
             </div>
-
-            <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-md font-medium hover:bg-blue-700 transition-colors" x-text="text[language].register"></button>
+            
+             Matricule 
+            <div>
+                <label for="matricule" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-hashtag ml-2 text-primary-600"></i>
+                    الرقم المرجعي
+                </label>
+                <input type="text" 
+                       id="matricule" 
+                       name="matricule" 
+                       x-model="form.matricule"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                       placeholder="الرقم المرجعي الخاص بك"
+                       required>
+            </div>
+            
+             Full Name 
+            <div>
+                <label for="fullName" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-user ml-2 text-primary-600"></i>
+                    الاسم الكامل
+                </label>
+                <input type="text" 
+                       id="fullName" 
+                       name="fullName" 
+                       x-model="form.fullName"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                       placeholder="الاسم الكامل"
+                       required>
+            </div>
+            
+             Password 
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-lock ml-2 text-primary-600"></i>
+                    كلمة المرور
+                </label>
+                <input type="password" 
+                       id="password" 
+                       name="password" 
+                       x-model="form.password"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                       placeholder="كلمة المرور (6 أحرف على الأقل)"
+                       minlength="6"
+                       required>
+            </div>
+            
+             User Category 
+            <div>
+                <label for="userCategory" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-users ml-2 text-primary-600"></i>
+                    فئة المستخدم
+                </label>
+                <select id="userCategory" 
+                        name="userCategory" 
+                        x-model="form.userCategory"
+                        @change="updateSpecificRoles()"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                        required>
+                    <option value="">اختر فئة المستخدم</option>
+                    <option value="teacher">معلم</option>
+                    <option value="student">طالب</option>
+                    <option value="admin">إداري</option>
+                    <option value="supervisor">مشرف</option>
+                </select>
+            </div>
+            
+             Specific Role 
+            <div x-show="form.userCategory">
+                <label for="specificRole" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-briefcase ml-2 text-primary-600"></i>
+                    الدور المحدد
+                </label>
+                <select id="specificRole" 
+                        name="specificRole" 
+                        x-model="form.specificRole"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                        required>
+                    <option value="">اختر الدور المحدد</option>
+                    <template x-for="role in specificRoles" :key="role.value">
+                        <option :value="role.value" x-text="role.label"></option>
+                    </template>
+                </select>
+            </div>
+            
+             Wilaya 
+            <div>
+                <label for="wilaya" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-map-marker-alt ml-2 text-primary-600"></i>
+                    الولاية
+                </label>
+                <select id="wilaya" 
+                        name="wilaya" 
+                        x-model="form.wilaya"
+                        @change="updateMoughataas()"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                        required>
+                    <option value="">اختر الولاية</option>
+                    <option value="nouakchott_north">نواكشوط الشمالية</option>
+                    <option value="nouakchott_south">نواكشوط الجنوبية</option>
+                    <option value="trarza">الترارزة</option>
+                    <option value="adrar">أدرار</option>
+                    <option value="dakhlet_nouadhibou">داخلت نواذيبو</option>
+                    <option value="tagant">تكانت</option>
+                    <option value="brakna">البراكنة</option>
+                    <option value="gorgol">كوركول</option>
+                    <option value="inchiri">إنشيري</option>
+                    <option value="hodh_ech_chargui">الحوض الشرقي</option>
+                    <option value="hodh_el_gharbi">الحوض الغربي</option>
+                    <option value="assaba">العصابة</option>
+                    <option value="guidimaka">كيدي ماغا</option>
+                    <option value="tiris_zemmour">تيرس زمور</option>
+                </select>
+            </div>
+            
+             Moughataa 
+            <div x-show="form.wilaya">
+                <label for="moughataa" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-location-dot ml-2 text-primary-600"></i>
+                    المقاطعة
+                </label>
+                <select id="moughataa" 
+                        name="moughataa" 
+                        x-model="form.moughataa"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                        required>
+                    <option value="">اختر المقاطعة</option>
+                    <template x-for="moughataa in moughataas" :key="moughataa.value">
+                        <option :value="moughataa.value" x-text="moughataa.label_ar"></option>
+                    </template>
+                </select>
+            </div>
+            
+             School 
+            <div>
+                <label for="school" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-school ml-2 text-primary-600"></i>
+                    المدرسة
+                </label>
+                <select id="school" 
+                        name="school" 
+                        x-model="form.school"
+                        @change="checkNewSchool()"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                        required>
+                    <option value="">اختر المدرسة</option>
+                    <template x-for="school in schools" :key="school.value">
+                        <option :value="school.value" x-text="school.label"></option>
+                    </template>
+                    <option value="new_school">مدرسة جديدة (غير موجودة في القائمة)</option>
+                </select>
+            </div>
+            
+             New School Input 
+            <div x-show="form.school === 'new_school'">
+                <label for="newSchoolName" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-plus ml-2 text-primary-600"></i>
+                    اسم المدرسة الجديدة
+                </label>
+                <input type="text" 
+                       id="newSchoolName" 
+                       x-model="form.newSchoolName"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                       placeholder="أدخل اسم المدرسة الجديدة">
+                <input type="hidden" name="isNewSchool" :value="form.school === 'new_school' ? 'true' : 'false'">
+            </div>
+            
+             Submit Button 
+            <div class="pt-6">
+                <button type="submit" 
+                        class="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
+                    <i class="fas fa-user-plus ml-2"></i>
+                    إنشاء الحساب
+                </button>
+            </div>
         </form>
-
-        <div class="p-6 border-t text-center space-y-2">
-            <p class="text-sm text-gray-600">
-                <span x-text="text[language].haveAccount"></span>
-                <a href="{{ url_for('login') }}" class="text-blue-600 hover:underline" x-text="text[language].login"></a>
+        
+        <div class="text-center mt-6">
+            <p class="text-gray-600">
+                لديك حساب بالفعل؟ 
+                <a href="{{ url_for('login') }}" class="text-primary-600 hover:text-primary-700 font-medium">
+                    تسجيل الدخول
+                </a>
             </p>
-            <a href="{{ url_for('index') }}" class="text-sm text-gray-500 hover:underline block" x-text="text[language].backToHome"></a>
         </div>
     </div>
 </div>
 
 <script>
-function registerPage() {
+function registrationForm() {
     return {
-        language: 'ar',
-        userCategory: '',
-        wilaya: '',
-        moughataa: '',
-        isNewSchool: false,
+        form: {
+            phone: '',
+            nni: '',
+            matricule: '',
+            fullName: '',
+            password: '',
+            userCategory: '',
+            specificRole: '',
+            wilaya: '',
+            moughataa: '',
+            school: '',
+            newSchoolName: ''
+        },
+        specificRoles: [],
         moughataas: [],
         schools: [],
-        
-        text: {
-            ar: {
-                title: 'إنشاء حساب جديد',
-                subtitle: 'املأ النموذج للتسجيل في منصة تدريس',
-                phone: 'رقم الهاتف',
-                phonePlaceholder: 'أدخل رقم الهاتف (8 أرقام)',
-                nni: 'رقم البطاقة الوطنية',
-                nniPlaceholder: 'أدخل رقم البطاقة الوطنية',
-                matricule: 'الرقم المرجعي',
-                matriculePlaceholder: 'أدخل الرقم المرجعي',
-                fullName: 'الاسم الكامل',
-                fullNamePlaceholder: 'أدخل الاسم الكامل',
-                password: 'كلمة المرور',
-                passwordPlaceholder: 'أدخل كلمة المرور (6 أحرف على الأقل)',
-                userCategory: 'فئة المستخدم',
-                userCategoryPlaceholder: 'اختر فئة المستخدم',
-                specificRole: 'الدور المحدد',
-                specificRolePlaceholder: 'اختر الدور المحدد',
-                wilaya: 'الولاية',
-                wilayaPlaceholder: 'اختر الولاية',
-                moughataa: 'المقاطعة',
-                moughataPlaceholder: 'اختر المقاطعة',
-                school: 'المدرسة',
-                schoolPlaceholder: 'اختر المدرسة',
-                newSchool: 'مدرسة جديدة',
-                newSchoolName: 'اسم المدرسة الجديدة',
-                register: 'إنشاء الحساب',
-                haveAccount: 'لديك حساب بالفعل؟',
-                login: 'تسجيل الدخول',
-                backToHome: 'العودة للرئيسية'
-            },
-            fr: {
-                title: 'Créer un nouveau compte',
-                subtitle: 'Remplissez le formulaire pour vous inscrire sur la plateforme Tedris',
-                phone: 'Numéro de téléphone',
-                phonePlaceholder: 'Entrez le numéro de téléphone (8 chiffres)',
-                nni: 'Numéro de carte nationale',
-                nniPlaceholder: 'Entrez le numéro de carte nationale',
-                matricule: 'Numéro de référence',
-                matriculePlaceholder: 'Entrez le numéro de référence',
-                fullName: 'Nom complet',
-                fullNamePlaceholder: 'Entrez le nom complet',
-                password: 'Mot de passe',
-                passwordPlaceholder: 'Entrez le mot de passe (au moins 6 caractères)',
-                userCategory: 'Catégorie utilisateur',
-                userCategoryPlaceholder: 'Choisissez la catégorie utilisateur',
-                specificRole: 'Rôle spécifique',
-                specificRolePlaceholder: 'Choisissez le rôle spécifique',
-                wilaya: 'Wilaya',
-                wilayaPlaceholder: 'Choisissez la wilaya',
-                moughataa: 'Moughataa',
-                moughataPlaceholder: 'Choisissez la moughataa',
-                school: 'École',
-                schoolPlaceholder: "Choisissez l'école",
-                newSchool: 'Nouvelle école',
-                newSchoolName: "Nom de la nouvelle école",
-                register: 'Créer le compte',
-                haveAccount: 'Vous avez déjà un compte ?',
-                login: 'Se connecter',
-                backToHome: "Retour à l'accueil"
-            }
-        },
-        
-        categories: {
-            ar: [
-                { value: 'teacher', label: 'معلم' },
-                { value: 'student', label: 'طالب' },
-                { value: 'admin', label: 'إداري' },
-                { value: 'parent', label: 'ولي أمر' }
-            ],
-            fr: [
-                { value: 'teacher', label: 'Enseignant' },
-                { value: 'student', label: 'Étudiant' },
-                { value: 'admin', label: 'Administrateur' },
-                { value: 'parent', label: 'Parent' }
-            ]
-        },
-        
-        roles: {
-            teacher: {
-                ar: [
-                    { value: 'primary', label: 'معلم ابتدائي' },
-                    { value: 'secondary', label: 'معلم ثانوي' },
-                    { value: 'subject_teacher', label: 'معلم مادة' }
-                ],
-                fr: [
-                    { value: 'primary', label: 'Enseignant primaire' },
-                    { value: 'secondary', label: 'Enseignant secondaire' },
-                    { value: 'subject_teacher', label: 'Enseignant de matière' }
-                ]
-            },
-            student: {
-                ar: [
-                    { value: 'primary_student', label: 'طالب ابتدائي' },
-                    { value: 'secondary_student', label: 'طالب ثانوي' }
-                ],
-                fr: [
-                    { value: 'primary_student', label: 'Élève primaire' },
-                    { value: 'secondary_student', label: 'Élève secondaire' }
-                ]
-            },
-            admin: {
-                ar: [
-                    { value: 'school_admin', label: 'مدير مدرسة' },
-                    { value: 'system_admin', label: 'مدير نظام' }
-                ],
-                fr: [
-                    { value: 'school_admin', label: "Directeur d'école" },
-                    { value: 'system_admin', label: 'Administrateur système' }
-                ]
-            },
-            parent: {
-                ar: [{ value: 'parent', label: 'ولي أمر' }],
-                fr: [{ value: 'parent', label: 'Parent' }]
-            }
-        },
-        
-        wilayas: {
-            ar: [
-                { value: 'nouakchott_north', label: 'نواكشوط الشمالية' },
-                { value: 'nouakchott_south', label: 'نواكشوط الجنوبية' },
-                { value: 'trarza', label: 'الترارزة' },
-                { value: 'adrar', label: 'أدرار' }
-            ],
-            fr: [
-                { value: 'nouakchott_north', label: 'Nouakchott Nord' },
-                { value: 'nouakchott_south', label: 'Nouakchott Sud' },
-                { value: 'trarza', label: 'Trarza' },
-                { value: 'adrar', label: 'Adrar' }
-            ]
-        },
         
         init() {
             this.loadSchools();
         },
         
-        getRoleOptions() {
-            if (!this.userCategory) return [];
-            return this.roles[this.userCategory]?.[this.language] || [];
+        updateSpecificRoles() {
+            const roles = {
+                teacher: [
+                    { value: 'primary_teacher', label: 'معلم ابتدائي' },
+                    { value: 'secondary_teacher', label: 'معلم ثانوي' },
+                    { value: 'subject_teacher', label: 'معلم مادة' },
+                    { value: 'head_teacher', label: 'معلم رئيسي' }
+                ],
+                student: [
+                    { value: 'primary_student', label: 'طالب ابتدائي' },
+                    { value: 'secondary_student', label: 'طالب ثانوي' },
+                    { value: 'university_student', label: 'طالب جامعي' }
+                ],
+                admin: [
+                    { value: 'school_director', label: 'مدير مدرسة' },
+                    { value: 'vice_director', label: 'نائب مدير' },
+                    { value: 'secretary', label: 'سكرتير' },
+                    { value: 'accountant', label: 'محاسب' }
+                ],
+                supervisor: [
+                    { value: 'educational_supervisor', label: 'مشرف تربوي' },
+                    { value: 'regional_supervisor', label: 'مشرف إقليمي' },
+                    { value: 'inspector', label: 'مفتش' }
+                ]
+            };
+            
+            this.specificRoles = roles[this.form.userCategory] || [];
+            this.form.specificRole = '';
         },
         
-        async loadMoughataas() {
-            if (!this.wilaya) {
+        async updateMoughataas() {
+            if (!this.form.wilaya) {
                 this.moughataas = [];
                 return;
             }
             
             try {
-                const response = await fetch(`/api/moughataas/${this.wilaya}`);
+                const response = await fetch(`/api/moughataas/${this.form.wilaya}`);
                 this.moughataas = await response.json();
-                this.moughataa = '';
+                this.form.moughataa = '';
             } catch (error) {
                 console.error('Error loading moughataas:', error);
+                this.moughataas = [];
             }
         },
         
@@ -312,6 +306,23 @@ function registerPage() {
                 this.schools = await response.json();
             } catch (error) {
                 console.error('Error loading schools:', error);
+                this.schools = [];
+            }
+        },
+        
+        checkNewSchool() {
+            if (this.form.school === 'new_school') {
+                // Update the actual school field with the new school name when it changes
+                this.$watch('form.newSchoolName', (value) => {
+                    if (value && this.form.school === 'new_school') {
+                        // Create a hidden input for the actual school name
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'school';
+                        hiddenInput.value = value;
+                        document.querySelector('form').appendChild(hiddenInput);
+                    }
+                });
             }
         }
     }
