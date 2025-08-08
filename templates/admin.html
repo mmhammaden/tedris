@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة الإدارة - منصة تدريس{% endblock %}
+
+{% block content %}
+<div x-data="adminPage()" class="min-h-screen bg-gray-50">
+     Header 
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('index') }}" class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-book text-white text-sm"></i>
+                        </div>
+                        <span class="text-xl font-bold text-gray-900">تدريس - الإدارة</span>
+                    </a>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex gap-2">
+                        <button @click="language = 'ar'" :class="language === 'ar' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-3 py-1 rounded text-sm">العربية</button>
+                        <button @click="language = 'fr'" :class="language === 'fr' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-3 py-1 rounded text-sm">Français</button>
+                    </div>
+                    <button @click="exportData()" class="flex items-center gap-2 px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700">
+                        <i class="fas fa-download"></i>
+                        <span x-text="text[language].export"></span>
+                    </button>
+                    <a href="{{ url_for('logout') }}" class="flex items-center gap-2 px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span x-text="text[language].logout"></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+     Main Content 
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+         Header 
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900" x-text="text[language].title"></h1>
+                <p class="text-gray-600 mt-2" x-text="text[language].subtitle"></p>
+            </div>
+        </div>
+
+         Stats Cards 
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600" x-text="text[language].totalUsers"></p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.total_users }}</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-users text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600" x-text="text[language].recentRegistrations"></p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.recent_registrations }}</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-calendar text-green-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600" x-text="text[language].teachers"></p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.categories.get('teacher', 0) }}</p>
+                    </div>
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-chalkboard-teacher text-purple-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600" x-text="text[language].students"></p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.categories.get('student', 0) }}</p>
+                    </div>
+                    <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-graduation-cap text-orange-600"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+         Users Table 
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b">
+                <h3 class="text-lg font-semibold" x-text="text[language].allUsers"></h3>
+                <p class="text-sm text-gray-600">{{ users|length }} مستخدم مسجل</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left font-medium text-gray-500" x-text="text[language].phone"></th>
+                            <th class="px-6 py-3 text-left font-medium text-gray-500" x-text="text[language].name"></th>
+                            <th class="px-6 py-3 text-left font-medium text-gray-500" x-text="text[language].category"></th>
+                            <th class="px-6 py-3 text-left font-medium text-gray-500" x-text="text[language].role"></th>
+                            <th class="px-6 py-3 text-left font-medium text-gray-500" x-text="text[language].wilaya"></th>
+                            <th class="px-6 py-3 text-left font-medium text-gray-500" x-text="text[language].school"></th>
+                            <th class="px-6 py-3 text-left font-medium text-gray-500" x-text="text[language].registrationDate"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for user in users %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 font-mono">{{ user.phone }}</td>
+                            <td class="px-6 py-4">{{ user.full_name }}</td>
+                            <td class="px-6 py-4">{{ user.user_category }}</td>
+                            <td class="px-6 py-4">{{ user.specific_role }}</td>
+                            <td class="px-6 py-4">{{ user.wilaya }}</td>
+                            <td class="px-6 py-4">
+                                {{ user.school }}
+                                {% if user.is_new_school %}
+                                <span class="text-blue-600 text-xs">(جديدة)</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4">{{ user.created_at.split(' ')[0] if user.created_at else '' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+function adminPage() {
+    return {
+        language: 'ar',
+        text: {
+            ar: {
+                title: 'لوحة تحكم المدير',
+                subtitle: 'إدارة المستخدمين ومراقبة النظام',
+                totalUsers: 'إجمالي المستخدمين',
+                recentRegistrations: 'التسجيلات الأخيرة (7 أيام)',
+                teachers: 'المعلمون',
+                students: 'الطلاب',
+                allUsers: 'جميع المستخدمين',
+                export: 'تصدير البيانات',
+                logout: 'تسجيل الخروج',
+                phone: 'الهاتف',
+                name: 'الاسم الكامل',
+                category: 'الفئة',
+                role: 'الدور',
+                wilaya: 'الولاية',
+                school: 'المدرسة',
+                registrationDate: 'تاريخ التسجيل'
+            },
+            fr: {
+                title: 'Tableau de bord Admin',
+                subtitle: 'Gestion des utilisateurs et surveillance du système',
+                totalUsers: 'Total des utilisateurs',
+                recentRegistrations: 'Inscriptions récentes (7 jours)',
+                teachers: 'Enseignants',
+                students: 'Étudiants',
+                allUsers: 'Tous les utilisateurs',
+                export: 'Exporter les données',
+                logout: 'Se déconnecter',
+                phone: 'Téléphone',
+                name: 'Nom complet',
+                category: 'Catégorie',
+                role: 'Rôle',
+                wilaya: 'Wilaya',
+                school: 'École',
+                registrationDate: 'Date d\'inscription'
+            }
+        },
+        
+        exportData() {
+            // Create CSV content
+            const headers = ['Phone', 'NNI', 'Matricule', 'Full Name', 'Category', 'Role', 'Wilaya', 'Moughataa', 'School', 'Registration Date'];
+            const csvContent = [
+                headers.join(','),
+                // Add user data rows here - would need to be passed from backend
+            ].join('\n');
+            
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `tedris-users-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+    }
+}
+</script>
+{% endblock %}

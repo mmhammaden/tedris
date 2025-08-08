@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}منصة تدريس - الرئيسية{% endblock %}
+
+{% block content %}
+<div x-data="welcomePage()" class="min-h-screen">
+     Header 
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-book text-white"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-900">تدريس</h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+     Hero Section 
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="text-center mb-16">
+            <h1 class="text-4xl md:text-6xl font-bold text-gray-900 mb-6" x-text="text[language].title"></h1>
+            <p class="text-xl md:text-2xl text-gray-600 mb-4" x-text="text[language].subtitle"></p>
+            <p class="text-lg text-gray-500 max-w-3xl mx-auto" x-text="text[language].description"></p>
+        </div>
+
+         Action Cards 
+        <div class="grid md:grid-cols-2 gap-8 mb-16 max-w-4xl mx-auto">
+            <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow p-6">
+                <div class="text-center">
+                    <h3 class="text-2xl font-bold mb-4" x-text="text[language].loginTitle"></h3>
+                    <p class="text-gray-600 mb-6" x-text="text[language].loginDesc"></p>
+                    <a href="{{ url_for('login') }}" class="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors" x-text="text[language].loginButton"></a>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow p-6">
+                <div class="text-center">
+                    <h3 class="text-2xl font-bold mb-4" x-text="text[language].registerTitle"></h3>
+                    <p class="text-gray-600 mb-6" x-text="text[language].registerDesc"></p>
+                    <a href="{{ url_for('register') }}" class="inline-block bg-white text-blue-600 border-2 border-blue-600 px-8 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors" x-text="text[language].registerButton"></a>
+                </div>
+            </div>
+        </div>
+
+         Features Section 
+        <div class="mb-16">
+            <h2 class="text-3xl font-bold text-center text-gray-900 mb-12" x-text="text[language].featuresTitle"></h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <template x-for="(feature, index) in text[language].features" :key="index">
+                    <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow p-6 text-center">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <i :class="feature.icon" class="text-blue-600"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-4" x-text="feature.title"></h3>
+                        <p class="text-gray-600" x-text="feature.description"></p>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </main>
+
+     Footer 
+    <footer class="bg-white border-t">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center text-gray-500">
+                <p>&copy; 2024 منصة تدريس. جميع الحقوق محفوظة.</p>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<script>
+function welcomePage() {
+    return {
+        language: 'ar',
+        text: {
+            ar: {
+                title: 'مرحباً بكم في منصة تدريس',
+                subtitle: 'منصة تعليمية شاملة للطلاب والمعلمين في موريتانيا',
+                description: 'انضم إلى مجتمعنا التعليمي واستفد من أحدث الأدوات والموارد التعليمية',
+                loginTitle: 'تسجيل الدخول',
+                loginDesc: 'ادخل إلى حسابك الموجود',
+                loginButton: 'تسجيل الدخول',
+                registerTitle: 'إنشاء حساب جديد',
+                registerDesc: 'انشئ حساباً جديداً للانضمام إلى المنصة',
+                registerButton: 'إنشاء حساب',
+                featuresTitle: 'مميزات المنصة',
+                features: [
+                    {
+                        icon: 'fas fa-book',
+                        title: 'محتوى تعليمي متنوع',
+                        description: 'مكتبة شاملة من الدروس والمواد التعليمية'
+                    },
+                    {
+                        icon: 'fas fa-users',
+                        title: 'تفاعل مع المجتمع',
+                        description: 'تواصل مع المعلمين والطلاب من جميع أنحاء البلاد'
+                    },
+                    {
+                        icon: 'fas fa-graduation-cap',
+                        title: 'تتبع التقدم',
+                        description: 'راقب تقدمك الأكاديمي وحقق أهدافك التعليمية'
+                    },
+                    {
+                        icon: 'fas fa-school',
+                        title: 'إدارة المدارس',
+                        description: 'أدوات متقدمة لإدارة المدارس والفصول الدراسية'
+                    },
+                    {
+                        icon: 'fas fa-globe',
+                        title: 'دعم متعدد اللغات',
+                        description: 'متوفر باللغتين العربية والفرنسية'
+                    },
+                    {
+                        icon: 'fas fa-shield-alt',
+                        title: 'بيئة آمنة',
+                        description: 'منصة آمنة ومحمية لجميع المستخدمين'
+                    }
+                ]
+            },
+            fr: {
+                title: 'Bienvenue sur la plateforme Tedris',
+                subtitle: 'Plateforme éducative complète pour les étudiants et enseignants en Mauritanie',
+                description: 'Rejoignez notre communauté éducative et bénéficiez des derniers outils et ressources pédagogiques',
+                loginTitle: 'Se connecter',
+                loginDesc: 'Accédez à votre compte existant',
+                loginButton: 'Se connecter',
+                registerTitle: 'Créer un nouveau compte',
+                registerDesc: 'Créez un nouveau compte pour rejoindre la plateforme',
+                registerButton: 'Créer un compte',
+                featuresTitle: 'Fonctionnalités de la plateforme',
+                features: [
+                    {
+                        icon: 'fas fa-book',
+                        title: 'Contenu éducatif diversifié',
+                        description: 'Bibliothèque complète de cours et de matériel pédagogique'
+                    },
+                    {
+                        icon: 'fas fa-users',
+                        title: 'Interaction communautaire',
+                        description: 'Connectez-vous avec les enseignants et étudiants de tout le pays'
+                    },
+                    {
+                        icon: 'fas fa-graduation-cap',
+                        title: 'Suivi des progrès',
+                        description: 'Surveillez vos progrès académiques et atteignez vos objectifs'
+                    },
+                    {
+                        icon: 'fas fa-school',
+                        title: 'Gestion des écoles',
+                        description: 'Outils avancés pour la gestion des écoles et des classes'
+                    },
+                    {
+                        icon: 'fas fa-globe',
+                        title: 'Support multilingue',
+                        description: 'Disponible en arabe et en français'
+                    },
+                    {
+                        icon: 'fas fa-shield-alt',
+                        title: 'Environnement sécurisé',
+                        description: 'Plateforme sûre et protégée pour tous les utilisateurs'
+                    }
+                ]
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

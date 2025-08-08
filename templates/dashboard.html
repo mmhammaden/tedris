@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة التحكم - منصة تدريس{% endblock %}
+
+{% block content %}
+<div x-data="dashboardPage()" class="min-h-screen bg-gray-50">
+     Header 
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('index') }}" class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-book text-white text-sm"></i>
+                        </div>
+                        <span class="text-xl font-bold text-gray-900">تدريس</span>
+                    </a>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex gap-2">
+                        <button @click="language = 'ar'" :class="language === 'ar' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-3 py-1 rounded text-sm">العربية</button>
+                        <button @click="language = 'fr'" :class="language === 'fr' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-3 py-1 rounded text-sm">Français</button>
+                    </div>
+                    <button class="p-2 text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <button class="p-2 text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <a href="{{ url_for('logout') }}" class="flex items-center gap-2 px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span x-text="text[language].logout"></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+     Main Content 
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+         Welcome Section 
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2" x-text="text[language].welcome"></h1>
+            <p class="text-gray-600" x-text="text[language].subtitle"></p>
+        </div>
+
+         Quick Actions Grid 
+        <div class="mb-8">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-6" x-text="text[language].quickActions"></h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <template x-for="(action, index) in quickActions" :key="index">
+                    <div class="bg-white rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer p-6">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <div :class="action.color" class="w-10 h-10 rounded-lg flex items-center justify-center">
+                                <i :class="action.icon" class="text-white"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold" x-text="text[language][action.titleKey]"></h3>
+                        </div>
+                        <p class="text-gray-600" x-text="text[language][action.descKey]"></p>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+         Recent Activity 
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-xl font-semibold mb-4" x-text="text[language].recentActivity"></h3>
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-book text-blue-600 text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium">درس جديد متاح</p>
+                            <p class="text-xs text-gray-500">منذ ساعتين</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-file-alt text-green-600 text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium">واجب مُسلم</p>
+                            <p class="text-xs text-gray-500">أمس</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-bell text-purple-600 text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium">رسالة جديدة</p>
+                            <p class="text-xs text-gray-500">منذ 3 أيام</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-xl font-semibold mb-4" x-text="text[language].notifications"></h3>
+                <div class="space-y-4">
+                    <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p class="text-sm font-medium text-blue-800">اجتماع أولياء الأمور</p>
+                        <p class="text-xs text-blue-600">غداً الساعة 2:00 مساءً</p>
+                    </div>
+                    <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p class="text-sm font-medium text-yellow-800">موعد تسليم الواجب</p>
+                        <p class="text-xs text-yellow-600">خلال يومين</p>
+                    </div>
+                    <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <p class="text-sm font-medium text-green-800">تحديث النظام</p>
+                        <p class="text-xs text-green-600">ميزات جديدة متاحة</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+function dashboardPage() {
+    return {
+        language: 'ar',
+        text: {
+            ar: {
+                welcome: 'مرحباً بك في لوحة التحكم',
+                subtitle: 'إدارة حسابك والوصول إلى جميع الميزات',
+                quickActions: 'الإجراءات السريعة',
+                myProfile: 'ملفي الشخصي',
+                profileDesc: 'عرض وتحديث معلوماتك الشخصية',
+                myCourses: 'دوراتي',
+                coursesDesc: 'الوصول إلى الدورات والمواد التعليمية',
+                messages: 'الرسائل',
+                messagesDesc: 'التواصل مع المعلمين والطلاب',
+                schedule: 'الجدول الزمني',
+                scheduleDesc: 'عرض جدولك الدراسي والمواعيد',
+                assignments: 'الواجبات',
+                assignmentsDesc: 'إدارة الواجبات والمشاريع',
+                reports: 'التقارير',
+                reportsDesc: 'عرض تقارير الأداء والتقدم',
+                logout: 'تسجيل الخروج',
+                recentActivity: 'النشاط الأخير',
+                notifications: 'الإشعارات'
+            },
+            fr: {
+                welcome: 'Bienvenue dans votre tableau de bord',
+                subtitle: 'Gérez votre compte et accédez à toutes les fonctionnalités',
+                quickActions: 'Actions rapides',
+                myProfile: 'Mon profil',
+                profileDesc: 'Voir et mettre à jour vos informations personnelles',
+                myCourses: 'Mes cours',
+                coursesDesc: 'Accéder aux cours et matériel pédagogique',
+                messages: 'Messages',
+                messagesDesc: 'Communiquer avec les enseignants et étudiants',
+                schedule: 'Emploi du temps',
+                scheduleDesc: 'Voir votre emploi du temps et rendez-vous',
+                assignments: 'Devoirs',
+                assignmentsDesc: 'Gérer les devoirs et projets',
+                reports: 'Rapports',
+                reportsDesc: 'Voir les rapports de performance et progrès',
+                logout: 'Se déconnecter',
+                recentActivity: 'Activité récente',
+                notifications: 'Notifications'
+            }
+        },
+        
+        quickActions: [
+            {
+                icon: 'fas fa-user',
+                titleKey: 'myProfile',
+                descKey: 'profileDesc',
+                color: 'bg-blue-500'
+            },
+            {
+                icon: 'fas fa-book',
+                titleKey: 'myCourses',
+                descKey: 'coursesDesc',
+                color: 'bg-green-500'
+            },
+            {
+                icon: 'fas fa-envelope',
+                titleKey: 'messages',
+                descKey: 'messagesDesc',
+                color: 'bg-purple-500'
+            },
+            {
+                icon: 'fas fa-calendar',
+                titleKey: 'schedule',
+                descKey: 'scheduleDesc',
+                color: 'bg-orange-500'
+            },
+            {
+                icon: 'fas fa-file-alt',
+                titleKey: 'assignments',
+                descKey: 'assignmentsDesc',
+                color: 'bg-red-500'
+            },
+            {
+                icon: 'fas fa-chart-bar',
+                titleKey: 'reports',
+                descKey: 'reportsDesc',
+                color: 'bg-indigo-500'
+            }
+        ]
+    }
+}
+</script>
+{% endblock %}
