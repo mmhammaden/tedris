@@ -90,7 +90,7 @@ def validate_phone(phone):
         return False
     try:
         phone_num = int(phone)
-        return 22000000 <= phone_num <= 49999999
+        return 20000000 <= phone_num <= 49999999
     except ValueError:
         return False
 
