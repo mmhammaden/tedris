@@ -22,6 +22,7 @@
                 <input type="tel" 
                        id="phone" 
                        name="phone" 
+                       autocomplete="username"
                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
                        placeholder="مثال: 22123456"
                        maxlength="8"
@@ -37,6 +38,7 @@
                     <input :type="showPassword ? 'text' : 'password'" 
                            id="password" 
                            name="password" 
+                           autocomplete="current-password"
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors pr-12"
                            placeholder="كلمة المرور"
                            required>
@@ -58,7 +60,7 @@
                         تذكرني
                     </label>
                 </div>
-                <a href="#" class="text-sm text-primary-600 hover:text-primary-700">
+                <a href="{{ url_for('forgot_password') }}" class="text-sm text-primary-600 hover:text-primary-700">
                     نسيت كلمة المرور؟
                 </a>
             </div>
@@ -82,53 +84,4 @@
         </div>
     </div>
 </div>
-
-<script>
-function loginPage() {
-    return {
-        language: 'ar',
-        text: {
-            ar: {
-                title: 'تسجيل الدخول',
-                subtitle: 'أدخل بياناتك للوصول إلى حسابك',
-                phone: 'رقم الهاتف',
-                phonePlaceholder: 'أدخل رقم الهاتف (8 أرقام)',
-                password: 'كلمة المرور',
-                passwordPlaceholder: 'أدخل كلمة المرور',
-                login: 'تسجيل الدخول',
-                noAccount: 'ليس لديك حساب؟',
-                register: 'إنشاء حساب جديد',
-                backToHome: 'العودة للرئيسية'
-            },
-            fr: {
-                title: 'Connexion',
-                subtitle: 'Entrez vos informations pour accéder à votre compte',
-                phone: 'Numéro de téléphone',
-                phonePlaceholder: 'Entrez le numéro de téléphone (8 chiffres)',
-                password: 'Mot de passe',
-                passwordPlaceholder: 'Entrez le mot de passe',
-                login: 'Se connecter',
-                noAccount: "Vous n'avez pas de compte ?",
-                register: 'Créer un nouveau compte',
-                backToHome: "Retour à l'accueil"
-            }
-        }
-    }
-}
-
-// Add some interactive effects
-document.addEventListener('DOMContentLoaded', function() {
-    const inputs = document.querySelectorAll('input[type="tel"], input[type="password"]');
-    
-    inputs.forEach(input => {
-        input.addEventListener('focus', function() {
-            this.parentElement.classList.add('ring-2', 'ring-primary-500');
-        });
-        
-        input.addEventListener('blur', function() {
-            this.parentElement.classList.remove('ring-2', 'ring-primary-500');
-        });
-    });
-});
-</script>
 {% endblock %}

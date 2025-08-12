@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}المحادثات - تدريس{% endblock %}
+
+{% block content %}
+<div x-data="chatApp()" class="h-screen max-h-screen flex bg-white rounded-xl shadow-lg overflow-hidden fade-in">
+    <!-- Sidebar - Conversations List -->
+    <div class="w-1/3 border-l border-gray-200 flex flex-col">
+        <!-- Header -->
+        <div class="bg-primary-600 text-white p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold">
+                    <i class="fas fa-comments ml-2"></i>
+                    المحادثات
+                </h2>
+                <button @click="showUserSearch = true" class="bg-primary-700 hover:bg-primary-800 p-2 rounded-lg transition-colors">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            
+            <!-- Search Users Modal -->
+            <div x-show="showUserSearch" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" x-transition>
+                <div class="bg-white rounded-xl p-6 w-96 max-w-full mx-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-gray-900">بحث عن مستخدمين</h3>
+                        <button @click="showUserSearch = false" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <input type="text" 
+                           x-model="searchQuery" 
+                           @input="searchUsers()"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                           placeholder="ابحث بالاسم أو المدرسة...">
+                    
+                    <div class="max-h-64 overflow-y-auto space-y-2">
+                        <template x-for="user in searchResults" :key="user.id">
+                            <div @click="startConversation(user)" class="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
+                                <div class="bg-primary-100 rounded-full w-10 h-10 flex items-center justify-center ml-3">
+                                    <i class="fas fa-user text-primary-600"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center">
+                                        <span class="font-medium" x-text="user.name"></span>
+                                        <span x-show="user.is_online" class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    </div>
+                                    <p class="text-sm text-gray-600" x-text="user.category + ' - ' + user.school"></p>
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <div x-show="searchResults.length === 0 && searchQuery" class="text-center py-4 text-gray-500">
+                            لا توجد نتائج
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Conversations List -->
+        <div class="flex-1 overflow-y-auto">
+            <template x-for="conversation in conversations" :key="conversation.id">
+                <div @click="selectConversation(conversation)" 
+                     :class="selectedConversation?.id === conversation.id ? 'bg-primary-50 border-l-4 border-primary-600' : 'hover:bg-gray-50'"
+                     class="p-4 border-b border-gray-100 cursor-pointer transition-colors">
+                    <div class="flex items-center">
+                        <div class="relative ml-3">
+                            <div class="bg-gray-200 rounded-full w-12 h-12 flex items-center justify-center">
+                                <i class="fas fa-user text-gray-600"></i>
+                            </div>
+                            <span x-show="conversation.other_user.is_online" class="absolute -bottom-1 -left-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-medium text-gray-900 truncate" x-text="conversation.other_user.name"></h3>
+                                <span x-show="conversation.unread_count > 0" class="bg-primary-600 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center" x-text="conversation.unread_count"></span>
+                            </div>
+                            <p class="text-sm text-gray-600 truncate" x-text="conversation.other_user.category"></p>
+                            <p class="text-xs text-gray-500 truncate" x-text="conversation.last_message.content || 'لا توجد رسائل'"></p>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            
+            <div x-show="conversations.length === 0" class="text-center py-8 text-gray-500">
+                <i class="fas fa-comments text-4xl mb-4"></i>
+                <p>لا توجد محادثات بعد</p>
+                <p class="text-sm">ابدأ محادثة جديدة بالضغط على +</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chat Area -->
+    <div class="flex-1 flex flex-col" x-show="selectedConversation">
+        <!-- Chat Header -->
+        <div class="bg-white border-b border-gray-200 p-4">
+            <div class="flex items-center">
+                <div class="bg-gray-200 rounded-full w-10 h-10 flex items-center justify-center ml-3">
+                    <i class="fas fa-user text-gray-600"></i>
+                </div>
+                <div>
+                    <h3 class="font-medium text-gray-900" x-text="selectedConversation?.other_user.name"></h3>
+                    <p class="text-sm text-gray-600">
+                        <span x-text="selectedConversation?.other_user.category"></span>
+                        <span x-show="selectedConversation?.other_user.is_online" class="text-green-600 mr-2">• متصل الآن</span>
+                        <span x-show="!selectedConversation?.other_user.is_online" class="text-gray-500 mr-2">• غير متصل</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Messages Area -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4" x-ref="messagesContainer">
+            <template x-for="message in messages" :key="message.id">
+                <div :class="message.is_mine ? 'flex justify-start' : 'flex justify-end'">
+                    <div :class="message.is_mine ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-900'" 
+                         class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg">
+                        <p x-text="message.content"></p>
+                        <p :class="message.is_mine ? 'text-primary-100' : 'text-gray-500'" 
+                           class="text-xs mt-1" 
+                           x-text="formatTime(message.created_at)"></p>
+                    </div>
+                </div>
+            </template>
+            
+            <div x-show="messages.length === 0" class="text-center py-8 text-gray-500">
+                <i class="fas fa-comment text-4xl mb-4"></i>
+                <p>لا توجد رسائل بعد</p>
+                <p class="text-sm">ابدأ المحادثة بإرسال رسالة</p>
+            </div>
+        </div>
+        
+        <!-- Message Input -->
+        <div class="bg-white border-t border-gray-200 p-4">
+            <form @submit.prevent="sendMessage()" class="flex space-x-2 space-x-reverse">
+                <input type="text" 
+                       x-model="newMessage" 
+                       class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                       placeholder="اكتب رسالتك هنا..."
+                       :disabled="!selectedConversation">
+                <button type="submit" 
+                        :disabled="!newMessage.trim() || !selectedConversation"
+                        class="bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white px-6 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Empty State -->
+    <div x-show="!selectedConversation" class="flex-1 flex items-center justify-center bg-gray-50">
+        <div class="text-center">
+            <i class="fas fa-comments text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-medium text-gray-900 mb-2">مرحباً بك في المحادثات</h3>
+            <p class="text-gray-600">اختر محادثة من القائمة أو ابدأ محادثة جديدة</p>
+        </div>
+    </div>
+</div>
+
+<script>
+function chatApp() {
+    return {
+        conversations: [],
+        selectedConversation: null,
+        messages: [],
+        newMessage: '',
+        showUserSearch: false,
+        searchQuery: '',
+        searchResults: [],
+        
+        init() {
+            this.loadConversations();
+            // Refresh conversations every 30 seconds
+            setInterval(() => {
+                this.loadConversations();
+                if (this.selectedConversation) {
+                    this.loadMessages(this.selectedConversation.id);
+                }
+            }, 30000);
+        },
+        
+        async loadConversations() {
+            try {
+                const response = await fetch('/api/conversations');
+                this.conversations = await response.json();
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+            }
+        },
+        
+        async selectConversation(conversation) {
+            this.selectedConversation = conversation;
+            await this.loadMessages(conversation.id);
+            // Reset unread count
+            conversation.unread_count = 0;
+        },
+        
+        async loadMessages(conversationId) {
+            try {
+                const response = await fetch(`/api/conversations/${conversationId}/messages`);
+                this.messages = await response.json();
+                this.$nextTick(() => {
+                    this.scrollToBottom();
+                });
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        },
+        
+        async sendMessage() {
+            if (!this.newMessage.trim() || !this.selectedConversation) return;
+            
+            const messageContent = this.newMessage.trim();
+            this.newMessage = '';
+            
+            try {
+                const response = await fetch('/api/send-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        recipient_id: this.selectedConversation.other_user.id,
+                        content: messageContent
+                    })
+                });
+                
+                if (response.ok) {
+                    await this.loadMessages(this.selectedConversation.id);
+                    await this.loadConversations();
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+            }
+        },
+        
+        async searchUsers() {
+            if (!this.searchQuery.trim()) {
+                this.searchResults = [];
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/users/search?q=${encodeURIComponent(this.searchQuery)}`);
+                this.searchResults = await response.json();
+            } catch (error) {
+                console.error('Error searching users:', error);
+            }
+        },
+        
+        async startConversation(user) {
+            this.showUserSearch = false;
+            this.searchQuery = '';
+            this.searchResults = [];
+            
+            // Check if conversation already exists
+            const existingConv = this.conversations.find(conv => 
+                conv.other_user.id === user.id
+            );
+            
+            if (existingConv) {
+                this.selectConversation(existingConv);
+            } else {
+                // Create new conversation object
+                const newConv = {
+                    id: null,
+                    other_user: user,
+                    last_message: { content: '', sender_id: null, time: null },
+                    unread_count: 0,
+                    updated_at: new Date().toISOString()
+                };
+                this.selectedConversation = newConv;
+                this.messages = [];
+            }
+        },
+        
+        scrollToBottom() {
+            const container = this.$refs.messagesContainer;
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        },
+        
+        formatTime(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) { // Less than 1 minute
+                return 'الآن';
+            } else if (diff < 3600000) { // Less than 1 hour
+                return `منذ ${Math.floor(diff / 60000)} دقيقة`;
+            } else if (diff < 86400000) { // Less than 1 day
+                return `منذ ${Math.floor(diff / 3600000)} ساعة`;
+            } else {
+                return date.toLocaleDateString('ar-SA');
+            }
+        }
+    }
+}
+</script>
+{% endblock %}
