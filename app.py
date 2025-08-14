@@ -130,13 +130,16 @@ USER_CATEGORIES = [
 ]
 
 def validate_phone(phone):
-    """Validate Mauritanian phone number"""
+    """Validate Mauritanian phone number (20000000-49999999)"""
     if not phone:
         return False
     # Remove any spaces or special characters
     phone = re.sub(r'[^\d]', '', phone)
-    # Check if it's 8 digits (local format) or starts with 222 (international)
-    return len(phone) == 8 and phone.isdigit()
+    # Check if it's 8 digits and within the valid range
+    if len(phone) == 8 and phone.isdigit():
+        phone_int = int(phone)
+        return 20000000 <= phone_int <= 49999999
+    return False
 
 def validate_nni(nni):
     """Validate NNI (numeric only)"""
@@ -175,7 +178,7 @@ def register():
             return render_template('register.html')
         
         if not validate_phone(phone):
-            flash('رقم الهاتف غير صحيح (يجب أن يكون 8 أرقام)', 'error')
+            flash('رقم الهاتف غير صحيح (يجب أن يكون 8 أرقام وينتقل بين 20000000 و49999999)', 'error')
             return render_template('register.html')
         
         if not validate_nni(nni):
