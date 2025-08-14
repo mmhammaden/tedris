@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}الألعاب التعليمية - تدريس{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
+    <div class="container mx-auto px-4">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-800 mb-4">🎮 الألعاب التعليمية</h1>
+            <p class="text-lg text-gray-600">تعلم واستمتع مع مجموعة متنوعة من الألعاب التعليمية</p>
+        </div>
+
+        <!-- Games Grid -->
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            
+            <!-- Math Jeopardy -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                <div class="bg-gradient-to-r from-purple-500 to-pink-500 p-6">
+                    <div class="text-white text-center">
+                        <div class="text-4xl mb-2">🧮</div>
+                        <h3 class="text-xl font-bold">Math Jeopardy</h3>
+                        <p class="text-purple-100">مسابقة الرياضيات</p>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-600 mb-4">اختبر معرفتك في الرياضيات مع لعبة المسابقات التفاعلية. يمكنك اللعب بالعربية أو الفرنسية!</p>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">الجبر</span>
+                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">الهندسة</span>
+                        <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">الحساب</span>
+                    </div>
+                    <a href="{{ url_for('math_jeopardy') }}" 
+                       class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-6 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-colors duration-200 block text-center">
+                        ابدأ اللعب
+                    </a>
+                </div>
+            </div>
+
+            <!-- Coming Soon Games -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden opacity-75">
+                <div class="bg-gradient-to-r from-green-500 to-teal-500 p-6">
+                    <div class="text-white text-center">
+                        <div class="text-4xl mb-2">🧪</div>
+                        <h3 class="text-xl font-bold">Chemistry Bingo</h3>
+                        <p class="text-green-100">بنغو العناصر الكيميائية</p>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-600 mb-4">تعلم العناصر الكيميائية وخصائصها من خلال لعبة البنغو التفاعلية.</p>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">قريباً</span>
+                    </div>
+                    <button disabled 
+                            class="w-full bg-gray-300 text-gray-500 py-3 px-6 rounded-lg font-semibold cursor-not-allowed block text-center">
+                        قريباً
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden opacity-75">
+                <div class="bg-gradient-to-r from-orange-500 to-red-500 p-6">
+                    <div class="text-white text-center">
+                        <div class="text-4xl mb-2">🎨</div>
+                        <h3 class="text-xl font-bold">Physics Pictionary</h3>
+                        <p class="text-orange-100">رسم المفاهيم الفيزيائية</p>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-600 mb-4">ارسم واخمن المفاهيم الفيزيائية في لعبة تفاعلية ممتعة.</p>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">قريباً</span>
+                    </div>
+                    <button disabled 
+                            class="w-full bg-gray-300 text-gray-500 py-3 px-6 rounded-lg font-semibold cursor-not-allowed block text-center">
+                        قريباً
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Back to Dashboard -->
+        <div class="text-center mt-12">
+            <a href="{{ url_for('dashboard') }}" 
+               class="inline-flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                العودة إلى لوحة التحكم
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

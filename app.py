@@ -7,6 +7,7 @@ import re
 import requests
 import secrets
 import json
+import random
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-in-production'
@@ -134,6 +135,83 @@ def init_database():
                 )
             except sqlite3.IntegrityError:
                 pass  # Ignore duplicates
+    
+    conn.commit()
+    conn.close()
+
+def init_game_database():
+    """Initialize game-related database tables"""
+    conn = get_db_connection()
+    
+    # Create math_jeopardy_questions table
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS math_jeopardy_questions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category TEXT NOT NULL,
+            points INTEGER NOT NULL,
+            question_ar TEXT NOT NULL,
+            question_fr TEXT NOT NULL,
+            answer_ar TEXT NOT NULL,
+            answer_fr TEXT NOT NULL,
+            explanation_ar TEXT,
+            explanation_fr TEXT,
+            difficulty_level INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Create game_sessions table
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS game_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            game_type TEXT NOT NULL,
+            score INTEGER DEFAULT 0,
+            questions_answered INTEGER DEFAULT 0,
+            correct_answers INTEGER DEFAULT 0,
+            language_mode TEXT DEFAULT 'arabic',
+            is_completed BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            completed_at TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+    
+    # Insert sample Math Jeopardy questions if table is empty
+    question_count = conn.execute('SELECT COUNT(*) FROM math_jeopardy_questions').fetchone()[0]
+    if question_count == 0:
+        sample_questions = [
+            # Algebra - 100 points
+            ('الجبر', 100, 'ما هو ناتج x + 5 = 12؟', 'Quelle est la valeur de x + 5 = 12?', '7', '7', 'نطرح 5 من الطرفين', 'On soustrait 5 des deux côtés', 1),
+            ('الجبر', 100, 'إذا كان 2x = 10، فما قيمة x؟', 'Si 2x = 10, quelle est la valeur de x?', '5', '5', 'نقسم الطرفين على 2', 'On divise les deux côtés par 2', 1),
+            
+            # Algebra - 200 points
+            ('الجبر', 200, 'حل المعادلة: 3x - 7 = 14', 'Résolvez: 3x - 7 = 14', '7', '7', '3x = 21، إذن x = 7', '3x = 21, donc x = 7', 2),
+            ('الجبر', 200, 'ما هو ناتج (x + 3)(x - 2)؟', 'Quel est le résultat de (x + 3)(x - 2)?', 'x² + x - 6', 'x² + x - 6', 'نضرب كل حد في الأول بكل حد في الثاني', 'On multiplie chaque terme du premier par chaque terme du second', 2),
+            
+            # Geometry - 100 points
+            ('الهندسة', 100, 'كم عدد أضلاع المثلث؟', 'Combien de côtés a un triangle?', '3', '3', 'المثلث له ثلاثة أضلاع دائماً', 'Un triangle a toujours trois côtés', 1),
+            ('الهندسة', 100, 'ما هو مجموع زوايا المثلث؟', 'Quelle est la somme des angles d\'un triangle?', '180°', '180°', 'مجموع زوايا أي مثلث يساوي 180 درجة', 'La somme des angles de tout triangle égale 180 degrés', 1),
+            
+            # Geometry - 200 points
+            ('الهندسة', 200, 'ما هي مساحة المستطيل الذي طوله 8 وعرضه 5؟', 'Quelle est l\'aire d\'un rectangle de longueur 8 et largeur 5?', '40', '40', 'المساحة = الطول × العرض = 8 × 5', 'Aire = longueur × largeur = 8 × 5', 2),
+            ('الهندسة', 200, 'ما هو محيط الدائرة التي نصف قطرها 7؟', 'Quel est le périmètre d\'un cercle de rayon 7?', '44 أو 14π', '44 ou 14π', 'المحيط = 2πr = 2π × 7 = 14π ≈ 44', 'Périmètre = 2πr = 2π × 7 = 14π ≈ 44', 2),
+            
+            # Arithmetic - 100 points
+            ('الحساب', 100, 'ما هو ناتج 15 + 27؟', 'Quel est le résultat de 15 + 27?', '42', '42', 'نجمع الآحاد ثم العشرات', 'On additionne les unités puis les dizaines', 1),
+            ('الحساب', 100, 'ما هو ناتج 8 × 7؟', 'Quel est le résultat de 8 × 7?', '56', '56', '8 × 7 = 56', '8 × 7 = 56', 1),
+            
+            # Arithmetic - 200 points
+            ('الحساب', 200, 'ما هو ناتج 144 ÷ 12؟', 'Quel est le résultat de 144 ÷ 12?', '12', '12', '144 ÷ 12 = 12', '144 ÷ 12 = 12', 2),
+            ('الحساب', 200, 'ما هو 25% من 80؟', 'Combien font 25% de 80?', '20', '20', '25% = 1/4، و 80 ÷ 4 = 20', '25% = 1/4, et 80 ÷ 4 = 20', 2),
+        ]
+        
+        for question in sample_questions:
+            conn.execute('''
+                INSERT INTO math_jeopardy_questions 
+                (category, points, question_ar, question_fr, answer_ar, answer_fr, explanation_ar, explanation_fr, difficulty_level)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', question)
     
     conn.commit()
     conn.close()
@@ -651,7 +729,24 @@ def logout():
     flash('تم تسجيل الخروج بنجاح', 'success')
     return redirect(url_for('index'))
 
-# Chat API Routes (keeping existing ones)
+@app.route('/games')
+def games():
+    """Games menu page"""
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول أولاً', 'error')
+        return redirect(url_for('login'))
+    
+    return render_template('games.html')
+
+@app.route('/games/math-jeopardy')
+def math_jeopardy():
+    """Math Jeopardy game page"""
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول أولاً', 'error')
+        return redirect(url_for('login'))
+    
+    return render_template('math_jeopardy.html')
+
 @app.route('/api/users/search')
 def search_users():
     """Search users for chat"""
@@ -891,6 +986,160 @@ def get_schools():
     
     return jsonify([{'value': school['name'], 'label': school['name']} for school in schools])
 
+@app.route('/api/games/math-jeopardy/start', methods=['POST'])
+def start_math_jeopardy():
+    """Start a new Math Jeopardy game session"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    data = request.get_json()
+    language_mode = data.get('language_mode', 'arabic')  # 'arabic', 'french', or 'mixed'
+    
+    user_id = session['user_id']
+    conn = get_db_connection()
+    
+    # Create new game session
+    cursor = conn.execute('''
+        INSERT INTO game_sessions (user_id, game_type, language_mode)
+        VALUES (?, ?, ?)
+    ''', (user_id, 'math_jeopardy', language_mode))
+    
+    session_id = cursor.lastrowid
+    
+    # Get questions organized by category and points
+    questions = conn.execute('''
+        SELECT id, category, points, question_ar, question_fr, difficulty_level
+        FROM math_jeopardy_questions
+        ORDER BY category, points
+    ''').fetchall()
+    
+    conn.close()
+    
+    # Organize questions into board format
+    board = {}
+    for question in questions:
+        category = question['category']
+        if category not in board:
+            board[category] = {}
+        
+        # Choose question text based on language mode
+        if language_mode == 'french':
+            question_text = question['question_fr']
+        else:
+            question_text = question['question_ar']
+        
+        board[category][question['points']] = {
+            'id': question['id'],
+            'question': question_text,
+            'answered': False
+        }
+    
+    return jsonify({
+        'session_id': session_id,
+        'board': board,
+        'language_mode': language_mode
+    })
+
+@app.route('/api/games/math-jeopardy/question/<int:question_id>')
+def get_jeopardy_question(question_id):
+    """Get a specific question for Math Jeopardy"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    conn = get_db_connection()
+    question = conn.execute('''
+        SELECT * FROM math_jeopardy_questions WHERE id = ?
+    ''', (question_id,)).fetchone()
+    conn.close()
+    
+    if not question:
+        return jsonify({'error': 'Question not found'}), 404
+    
+    return jsonify({
+        'id': question['id'],
+        'category': question['category'],
+        'points': question['points'],
+        'question_ar': question['question_ar'],
+        'question_fr': question['question_fr'],
+        'difficulty_level': question['difficulty_level']
+    })
+
+@app.route('/api/games/math-jeopardy/answer', methods=['POST'])
+def submit_jeopardy_answer():
+    """Submit answer for Math Jeopardy question"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    data = request.get_json()
+    question_id = data.get('question_id')
+    user_answer = data.get('answer', '').strip()
+    session_id = data.get('session_id')
+    language_mode = data.get('language_mode', 'arabic')
+    
+    conn = get_db_connection()
+    
+    # Get question details
+    question = conn.execute('''
+        SELECT * FROM math_jeopardy_questions WHERE id = ?
+    ''', (question_id,)).fetchone()
+    
+    if not question:
+        conn.close()
+        return jsonify({'error': 'Question not found'}), 404
+    
+    # Check answer (case-insensitive, flexible matching)
+    correct_answer_ar = question['answer_ar'].lower().strip()
+    correct_answer_fr = question['answer_fr'].lower().strip()
+    user_answer_lower = user_answer.lower().strip()
+    
+    is_correct = (user_answer_lower == correct_answer_ar or 
+                  user_answer_lower == correct_answer_fr or
+                  user_answer_lower in correct_answer_ar or
+                  user_answer_lower in correct_answer_fr)
+    
+    # Update game session
+    if is_correct:
+        conn.execute('''
+            UPDATE game_sessions 
+            SET score = score + ?, questions_answered = questions_answered + 1, 
+                correct_answers = correct_answers + 1
+            WHERE id = ?
+        ''', (question['points'], session_id))
+    else:
+        conn.execute('''
+            UPDATE game_sessions 
+            SET questions_answered = questions_answered + 1
+            WHERE id = ?
+        ''', (session_id,))
+    
+    conn.commit()
+    
+    # Get updated session info
+    session_info = conn.execute('''
+        SELECT score, questions_answered, correct_answers FROM game_sessions WHERE id = ?
+    ''', (session_id,)).fetchone()
+    
+    conn.close()
+    
+    # Choose explanation based on language mode
+    if language_mode == 'french':
+        explanation = question['explanation_fr']
+        correct_answer = question['answer_fr']
+    else:
+        explanation = question['explanation_ar']
+        correct_answer = question['answer_ar']
+    
+    return jsonify({
+        'correct': is_correct,
+        'correct_answer': correct_answer,
+        'explanation': explanation,
+        'points_earned': question['points'] if is_correct else 0,
+        'total_score': session_info['score'],
+        'questions_answered': session_info['questions_answered'],
+        'correct_answers': session_info['correct_answers']
+    })
+
 if __name__ == '__main__':
     init_database()
+    init_game_database()  # Add game database initialization
     app.run(debug=True, host='0.0.0.0', port=5000)
