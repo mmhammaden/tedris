@@ -1,72 +1,39 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 import os
-from datetime import datetime, timedelta
 import re
-import requests
+from datetime import datetime, timedelta
 import secrets
-import json
-import random
+import requests
+from functools import wraps
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-change-in-production'
-
-# WhatsApp Business API Configuration
-WHATSAPP_API_URL = "https://graph.facebook.com/v18.0"
-WHATSAPP_PHONE_NUMBER_ID = os.environ.get('WHATSAPP_PHONE_NUMBER_ID', 'your_phone_number_id')
-WHATSAPP_ACCESS_TOKEN = os.environ.get('WHATSAPP_ACCESS_TOKEN', 'your_access_token')
-
-# Database configuration
-DATABASE = 'data/tedris.db'
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
 
 def get_db_connection():
-    """Get database connection"""
-    if not os.path.exists('data'):
-        os.makedirs('data')
-    
-    conn = sqlite3.connect(DATABASE)
+    conn = sqlite3.connect('tedris.db')
     conn.row_factory = sqlite3.Row
     return conn
 
-def init_database():
-    """Initialize database with tables and sample data"""
+def init_db():
     conn = get_db_connection()
     
     # Create users table
     conn.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            phone TEXT UNIQUE NOT NULL,
-            nni TEXT UNIQUE NOT NULL,
-            matricule TEXT UNIQUE NOT NULL,
             full_name TEXT NOT NULL,
+            nni TEXT UNIQUE NOT NULL,
+            phone TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
             user_category TEXT NOT NULL,
-            specific_role TEXT NOT NULL,
             wilaya TEXT NOT NULL,
             moughataa TEXT NOT NULL,
-            school TEXT NOT NULL,
-            is_new_school BOOLEAN DEFAULT FALSE,
-            is_verified BOOLEAN DEFAULT FALSE,
-            is_online BOOLEAN DEFAULT FALSE,
-            last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # Create verification codes table
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS verification_codes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            phone TEXT NOT NULL,
-            code TEXT NOT NULL,
-            purpose TEXT NOT NULL, -- 'registration' or 'password_reset'
-            expires_at TIMESTAMP NOT NULL,
-            is_used BOOLEAN DEFAULT FALSE,
-            attempts INTEGER DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            last_login TIMESTAMP,
+            is_online BOOLEAN DEFAULT FALSE,
+            last_seen TIMESTAMP
         )
     ''')
     
@@ -74,14 +41,12 @@ def init_database():
     conn.execute('''
         CREATE TABLE IF NOT EXISTS conversations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            participant1_id INTEGER NOT NULL,
-            participant2_id INTEGER NOT NULL,
-            last_message_id INTEGER,
+            user1_id INTEGER NOT NULL,
+            user2_id INTEGER NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (participant1_id) REFERENCES users (id),
-            FOREIGN KEY (participant2_id) REFERENCES users (id),
-            UNIQUE(participant1_id, participant2_id)
+            FOREIGN KEY (user1_id) REFERENCES users (id),
+            FOREIGN KEY (user2_id) REFERENCES users (id),
+            UNIQUE(user1_id, user2_id)
         )
     ''')
     
@@ -92,70 +57,26 @@ def init_database():
             conversation_id INTEGER NOT NULL,
             sender_id INTEGER NOT NULL,
             content TEXT NOT NULL,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             is_read BOOLEAN DEFAULT FALSE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (conversation_id) REFERENCES conversations (id),
             FOREIGN KEY (sender_id) REFERENCES users (id)
         )
     ''')
     
-    # Create schools table
+    # Create game_questions table
     conn.execute('''
-        CREATE TABLE IF NOT EXISTS schools (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT UNIQUE NOT NULL,
-            wilaya TEXT NOT NULL,
-            moughataa TEXT NOT NULL,
-            is_active BOOLEAN DEFAULT TRUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # Insert sample schools if table is empty
-    school_count = conn.execute('SELECT COUNT(*) FROM schools').fetchone()[0]
-    if school_count == 0:
-        schools = [
-            ('مدرسة النور الابتدائية', 'نواكشوط الشمالية', 'دار النعيم'),
-            ('مدرسة الأمل الثانوية', 'نواكشوط الجنوبية', 'عرفات'),
-            ('مدرسة المستقبل', 'الترارزة', 'روصو'),
-            ('مدرسة الرسالة', 'أدرار', 'أطار'),
-            ('مدرسة الفجر', 'الحوض الشرقي', 'النعمة'),
-            ('مدرسة الهدى', 'الحوض الغربي', 'العيون'),
-            ('مدرسة التقوى', 'العصابة', 'كيفة'),
-            ('مدرسة الإيمان', 'كوركول', 'سيلبابي'),
-            ('مدرسة الصلاح', 'كيدي ماغا', 'كيدي ماغا'),
-            ('مدرسة النجاح', 'البراكنة', 'ألاك')
-        ]
-        
-        for school in schools:
-            try:
-                conn.execute(
-                    'INSERT INTO schools (name, wilaya, moughataa) VALUES (?, ?, ?)',
-                    school
-                )
-            except sqlite3.IntegrityError:
-                pass  # Ignore duplicates
-    
-    conn.commit()
-    conn.close()
-
-def init_game_database():
-    """Initialize game-related database tables"""
-    conn = get_db_connection()
-    
-    # Create math_jeopardy_questions table
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS math_jeopardy_questions (
+        CREATE TABLE IF NOT EXISTS game_questions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             category TEXT NOT NULL,
-            points INTEGER NOT NULL,
             question_ar TEXT NOT NULL,
             question_fr TEXT NOT NULL,
             answer_ar TEXT NOT NULL,
             answer_fr TEXT NOT NULL,
             explanation_ar TEXT,
             explanation_fr TEXT,
-            difficulty_level INTEGER DEFAULT 1,
+            difficulty INTEGER DEFAULT 1,
+            points INTEGER DEFAULT 100,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -166,207 +87,60 @@ def init_game_database():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             game_type TEXT NOT NULL,
+            language_mode TEXT NOT NULL,
             score INTEGER DEFAULT 0,
             questions_answered INTEGER DEFAULT 0,
             correct_answers INTEGER DEFAULT 0,
-            language_mode TEXT DEFAULT 'arabic',
-            is_completed BOOLEAN DEFAULT FALSE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             completed_at TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
     
-    # Insert sample Math Jeopardy questions if table is empty
-    question_count = conn.execute('SELECT COUNT(*) FROM math_jeopardy_questions').fetchone()[0]
-    if question_count == 0:
-        sample_questions = [
-            # Algebra - 100 points
-            ('الجبر', 100, 'ما هو ناتج x + 5 = 12؟', 'Quelle est la valeur de x + 5 = 12?', '7', '7', 'نطرح 5 من الطرفين', 'On soustrait 5 des deux côtés', 1),
-            ('الجبر', 100, 'إذا كان 2x = 10، فما قيمة x؟', 'Si 2x = 10, quelle est la valeur de x?', '5', '5', 'نقسم الطرفين على 2', 'On divise les deux côtés par 2', 1),
-            
-            # Algebra - 200 points
-            ('الجبر', 200, 'حل المعادلة: 3x - 7 = 14', 'Résolvez: 3x - 7 = 14', '7', '7', '3x = 21، إذن x = 7', '3x = 21, donc x = 7', 2),
-            ('الجبر', 200, 'ما هو ناتج (x + 3)(x - 2)؟', 'Quel est le résultat de (x + 3)(x - 2)?', 'x² + x - 6', 'x² + x - 6', 'نضرب كل حد في الأول بكل حد في الثاني', 'On multiplie chaque terme du premier par chaque terme du second', 2),
-            
-            # Geometry - 100 points
-            ('الهندسة', 100, 'كم عدد أضلاع المثلث؟', 'Combien de côtés a un triangle?', '3', '3', 'المثلث له ثلاثة أضلاع دائماً', 'Un triangle a toujours trois côtés', 1),
-            ('الهندسة', 100, 'ما هو مجموع زوايا المثلث؟', 'Quelle est la somme des angles d\'un triangle?', '180°', '180°', 'مجموع زوايا أي مثلث يساوي 180 درجة', 'La somme des angles de tout triangle égale 180 degrés', 1),
-            
-            # Geometry - 200 points
-            ('الهندسة', 200, 'ما هي مساحة المستطيل الذي طوله 8 وعرضه 5؟', 'Quelle est l\'aire d\'un rectangle de longueur 8 et largeur 5?', '40', '40', 'المساحة = الطول × العرض = 8 × 5', 'Aire = longueur × largeur = 8 × 5', 2),
-            ('الهندسة', 200, 'ما هو محيط الدائرة التي نصف قطرها 7؟', 'Quel est le périmètre d\'un cercle de rayon 7?', '44 أو 14π', '44 ou 14π', 'المحيط = 2πr = 2π × 7 = 14π ≈ 44', 'Périmètre = 2πr = 2π × 7 = 14π ≈ 44', 2),
-            
-            # Arithmetic - 100 points
-            ('الحساب', 100, 'ما هو ناتج 15 + 27؟', 'Quel est le résultat de 15 + 27?', '42', '42', 'نجمع الآحاد ثم العشرات', 'On additionne les unités puis les dizaines', 1),
-            ('الحساب', 100, 'ما هو ناتج 8 × 7؟', 'Quel est le résultat de 8 × 7?', '56', '56', '8 × 7 = 56', '8 × 7 = 56', 1),
-            
-            # Arithmetic - 200 points
-            ('الحساب', 200, 'ما هو ناتج 144 ÷ 12؟', 'Quel est le résultat de 144 ÷ 12?', '12', '12', '144 ÷ 12 = 12', '144 ÷ 12 = 12', 2),
-            ('الحساب', 200, 'ما هو 25% من 80؟', 'Combien font 25% de 80?', '20', '20', '25% = 1/4، و 80 ÷ 4 = 20', '25% = 1/4, et 80 ÷ 4 = 20', 2),
-        ]
-        
-        for question in sample_questions:
-            conn.execute('''
-                INSERT INTO math_jeopardy_questions 
-                (category, points, question_ar, question_fr, answer_ar, answer_fr, explanation_ar, explanation_fr, difficulty_level)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', question)
-    
     conn.commit()
     conn.close()
 
-def validate_phone(phone):
-    """Validate phone number"""
-    if not phone or len(phone) != 8:
-        return False
-    try:
-        phone_num = int(phone)
-        return 20000000 <= phone_num <= 49999999
-    except ValueError:
-        return False
+# Mauritanian Wilayas and Moughataas
+WILAYAS_MOUGHATAAS = {
+    'نواكشوط الشمالية': ['تفرغ زينة', 'دار النعيم', 'توجونين'],
+    'نواكشوط الغربية': ['كرفور', 'تيارت', 'الميناء'],
+    'نواكشوط الجنوبية': ['الرياض', 'عرفات', 'الخير'],
+    'الحوض الشرقي': ['النعمة', 'الباسكنو', 'فصاله', 'أمجريه الجديدة'],
+    'الحوض الغربي': ['العيون', 'تمبدغه', 'كوبني', 'بوتلميت'],
+    'العصابة': ['كيفه', 'العصابة', 'بركيول', 'قورو'],
+    'كوركول': ['سيلبابي', 'مبوت', 'يارل', 'فولو فولبه'],
+    'البراكنة': ['ألاك', 'بوكي', 'مال', 'مقطع لحجار', 'أفديرك'],
+    'الترارزة': ['روصو', 'المذرذرة', 'بوتيليميت', 'كور ماصين'],
+    'آدرار': ['أطار', 'شنقيط', 'وادان', 'أوجفت'],
+    'داخلت نواديبو': ['نواديبو'],
+    'تكانت': ['تيجكجه', 'تامشكط', 'بومديد', 'كنكوصه'],
+    'كيدي ماغا': ['كيدي ماغا', 'جعوار', 'كوبني', 'نيملان'],
+    'إنشيري': ['أكجوجت', 'بنشاب', 'زويرات'],
+    'تيرس زمور': ['بير أم كرين', 'الكليبه', 'زويرات']
+}
 
-def format_phone_for_whatsapp(phone):
-    """Format phone number for WhatsApp (add country code)"""
-    if phone.startswith('222'):
-        return phone
-    return f"222{phone}"
+USER_CATEGORIES = [
+    'طالب',
+    'معلم',
+    'أستاذ',
+    'مدير مدرسة',
+    'مفتش تربوي',
+    'إداري',
+    'ولي أمر'
+]
+
+def validate_phone(phone):
+    """Validate Mauritanian phone number"""
+    if not phone:
+        return False
+    # Remove any spaces or special characters
+    phone = re.sub(r'[^\d]', '', phone)
+    # Check if it's 8 digits (local format) or starts with 222 (international)
+    return len(phone) == 8 and phone.isdigit()
 
 def validate_nni(nni):
     """Validate NNI (numeric only)"""
     return nni and re.match(r'^\d+$', nni)
-
-def generate_verification_code():
-    """Generate 6-digit verification code"""
-    return f"{secrets.randbelow(900000) + 100000:06d}"
-
-def send_whatsapp_verification(phone, code, purpose='registration'):
-    """Send verification code via WhatsApp"""
-    try:
-        whatsapp_phone = format_phone_for_whatsapp(phone)
-        
-        if purpose == 'registration':
-            message = f"""🎓 *تدريس - منصة التعليم الموريتانية*
-
-مرحباً بك في منصة تدريس!
-
-رمز التحقق الخاص بك هو: *{code}*
-
-يرجى إدخال هذا الرمز لإكمال عملية التسجيل.
-
-⏰ صالح لمدة 10 دقائق فقط
-🔒 لا تشارك هذا الرمز مع أي شخص آخر
-
-شكراً لانضمامك إلى مجتمع تدريس التعليمي! 📚"""
-        else:  # password_reset
-            message = f"""🔐 *تدريس - إعادة تعيين كلمة المرور*
-
-تم طلب إعادة تعيين كلمة المرور لحسابك.
-
-رمز التحقق: *{code}*
-
-يرجى إدخال هذا الرمز لإعادة تعيين كلمة المرور.
-
-⏰ صالح لمدة 10 دقائق فقط
-🔒 إذا لم تطلب هذا، يرجى تجاهل هذه الرسالة
-
-منصة تدريس 🎓"""
-        
-        payload = {
-            "messaging_product": "whatsapp",
-            "to": whatsapp_phone,
-            "type": "text",
-            "text": {
-                "body": message
-            }
-        }
-        
-        headers = {
-            "Authorization": f"Bearer {WHATSAPP_ACCESS_TOKEN}",
-            "Content-Type": "application/json"
-        }
-        
-        response = requests.post(
-            f"{WHATSAPP_API_URL}/{WHATSAPP_PHONE_NUMBER_ID}/messages",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-        
-        if response.status_code == 200:
-            return True, "تم إرسال رمز التحقق بنجاح"
-        else:
-            print(f"WhatsApp API Error: {response.status_code} - {response.text}")
-            return False, "فشل في إرسال رمز التحقق"
-            
-    except Exception as e:
-        print(f"WhatsApp Error: {str(e)}")
-        return False, "حدث خطأ في إرسال رمز التحقق"
-
-def store_verification_code(phone, code, purpose='registration'):
-    """Store verification code in database"""
-    conn = get_db_connection()
-    
-    # Delete old codes for this phone and purpose
-    conn.execute(
-        'DELETE FROM verification_codes WHERE phone = ? AND purpose = ?',
-        (phone, purpose)
-    )
-    
-    # Store new code (expires in 10 minutes)
-    expires_at = datetime.now() + timedelta(minutes=10)
-    conn.execute('''
-        INSERT INTO verification_codes (phone, code, purpose, expires_at)
-        VALUES (?, ?, ?, ?)
-    ''', (phone, code, purpose, expires_at))
-    
-    conn.commit()
-    conn.close()
-
-def verify_code(phone, code, purpose='registration'):
-    """Verify the provided code"""
-    conn = get_db_connection()
-    
-    verification = conn.execute('''
-        SELECT * FROM verification_codes 
-        WHERE phone = ? AND purpose = ? AND is_used = FALSE
-        ORDER BY created_at DESC LIMIT 1
-    ''', (phone, purpose)).fetchone()
-    
-    if not verification:
-        conn.close()
-        return False, "رمز التحقق غير صحيح"
-    
-    # Check if expired
-    if datetime.now() > datetime.fromisoformat(verification['expires_at']):
-        conn.close()
-        return False, "انتهت صلاحية رمز التحقق"
-    
-    # Check attempts
-    if verification['attempts'] >= 3:
-        conn.close()
-        return False, "تم تجاوز عدد المحاولات المسموح"
-    
-    # Check code
-    if verification['code'] != code:
-        # Increment attempts
-        conn.execute(
-            'UPDATE verification_codes SET attempts = attempts + 1 WHERE id = ?',
-            (verification['id'],)
-        )
-        conn.commit()
-        conn.close()
-        return False, "رمز التحقق غير صحيح"
-    
-    # Mark as used
-    conn.execute(
-        'UPDATE verification_codes SET is_used = TRUE WHERE id = ?',
-        (verification['id'],)
-    )
-    conn.commit()
-    conn.close()
-    
-    return True, "تم التحقق بنجاح"
 
 def update_user_online_status(user_id, is_online=True):
     """Update user's online status"""
@@ -385,230 +159,112 @@ def index():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    """Registration page"""
     if request.method == 'POST':
-        step = request.form.get('step', '1')
+        full_name = request.form.get('full_name', '').strip()
+        nni = request.form.get('nni', '').strip()
+        phone = request.form.get('phone', '').strip()
+        password = request.form.get('password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
+        user_category = request.form.get('user_category', '').strip()
+        wilaya = request.form.get('wilaya', '').strip()
+        moughataa = request.form.get('moughataa', '').strip()
         
-        if step == '1':
-            # Step 1: Collect user data and send verification code
-            phone = request.form.get('phone', '').strip()
-            nni = request.form.get('nni', '').strip()
-            matricule = request.form.get('matricule', '').strip()
-            full_name = request.form.get('fullName', '').strip()
-            password = request.form.get('password', '').strip()
-            user_category = request.form.get('userCategory', '').strip()
-            specific_role = request.form.get('specificRole', '').strip()
-            wilaya = request.form.get('wilaya', '').strip()
-            moughataa = request.form.get('moughataa', '').strip()
-            school = request.form.get('school', '').strip()
-            is_new_school = request.form.get('isNewSchool') == 'true'
-            
-            # Validation
-            errors = []
-            
-            if not validate_phone(phone):
-                errors.append('رقم الهاتف يجب أن يكون 8 أرقام بين 22000000 و 49999999')
-            
-            if not validate_nni(nni):
-                errors.append('رقم التعريف الوطني يجب أن يكون أرقام فقط')
-            
-            if not all([matricule, full_name, password, user_category, specific_role, wilaya, moughataa, school]):
-                errors.append('جميع الحقول مطلوبة')
-            
-            if len(password) < 6:
-                errors.append('كلمة المرور يجب أن تكون 6 أحرف على الأقل')
-            
-            if errors:
-                for error in errors:
-                    flash(error, 'error')
-                return render_template('register.html')
-            
-            # Check if user already exists
-            conn = get_db_connection()
-            existing_user = conn.execute(
-                'SELECT id FROM users WHERE phone = ? OR nni = ? OR matricule = ?',
-                (phone, nni, matricule)
-            ).fetchone()
+        # Validation
+        if not all([full_name, nni, phone, password, user_category, wilaya, moughataa]):
+            flash('جميع الحقول مطلوبة', 'error')
+            return render_template('register.html')
+        
+        if not validate_phone(phone):
+            flash('رقم الهاتف غير صحيح (يجب أن يكون 8 أرقام)', 'error')
+            return render_template('register.html')
+        
+        if not validate_nni(nni):
+            flash('رقم البطاقة الوطنية غير صحيح (أرقام فقط)', 'error')
+            return render_template('register.html')
+        
+        if len(password) < 6:
+            flash('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error')
+            return render_template('register.html')
+        
+        if password != confirm_password:
+            flash('كلمات المرور غير متطابقة', 'error')
+            return render_template('register.html')
+        
+        if user_category not in USER_CATEGORIES:
+            flash('فئة المستخدم غير صحيحة', 'error')
+            return render_template('register.html')
+        
+        if wilaya not in WILAYAS_MOUGHATAAS:
+            flash('الولاية غير صحيحة', 'error')
+            return render_template('register.html')
+        
+        if moughataa not in WILAYAS_MOUGHATAAS[wilaya]:
+            flash('المقاطعة غير صحيحة', 'error')
+            return render_template('register.html')
+        
+        # Check if user already exists
+        conn = get_db_connection()
+        existing_user = conn.execute(
+            'SELECT id FROM users WHERE nni = ? OR phone = ?',
+            (nni, phone)
+        ).fetchone()
+        
+        if existing_user:
+            flash('المستخدم موجود بالفعل (رقم البطاقة أو الهاتف مستخدم)', 'error')
             conn.close()
-            
-            if existing_user:
-                flash('مستخدم موجود بالفعل بهذا الهاتف أو رقم التعريف أو الرقم المرجعي', 'error')
-                return render_template('register.html')
-            
-            # Store registration data in session
-            session['registration_data'] = {
-                'phone': phone,
-                'nni': nni,
-                'matricule': matricule,
-                'full_name': full_name,
-                'password': password,
-                'user_category': user_category,
-                'specific_role': specific_role,
-                'wilaya': wilaya,
-                'moughataa': moughataa,
-                'school': school,
-                'is_new_school': is_new_school
-            }
-            
-            # Generate and send verification code
-            code = generate_verification_code()
-            store_verification_code(phone, code, 'registration')
-            
-            success, message = send_whatsapp_verification(phone, code, 'registration')
-            if success:
-                flash('تم إرسال رمز التحقق إلى WhatsApp الخاص بك', 'success')
-                return render_template('verify_phone.html', phone=phone, purpose='registration')
-            else:
-                flash(message, 'error')
-                return render_template('register.html')
+            return render_template('register.html')
         
-        elif step == '2':
-            # Step 2: Verify code and complete registration
-            verification_code = request.form.get('verification_code', '').strip()
-            phone = request.form.get('phone', '').strip()
-            
-            if not verification_code or len(verification_code) != 6:
-                flash('يرجى إدخال رمز التحقق المكون من 6 أرقام', 'error')
-                return render_template('verify_phone.html', phone=phone, purpose='registration')
-            
-            success, message = verify_code(phone, verification_code, 'registration')
-            if not success:
-                flash(message, 'error')
-                return render_template('verify_phone.html', phone=phone, purpose='registration')
-            
-            # Get registration data from session
-            reg_data = session.get('registration_data')
-            if not reg_data:
-                flash('انتهت صلاحية جلسة التسجيل، يرجى المحاولة مرة أخرى', 'error')
-                return redirect(url_for('register'))
-            
-            # Create user account
-            conn = get_db_connection()
-            password_hash = generate_password_hash(reg_data['password'])
-            
-            try:
-                conn.execute('''
-                    INSERT INTO users (
-                        phone, nni, matricule, full_name, password_hash,
-                        user_category, specific_role, wilaya, moughataa, school, 
-                        is_new_school, is_verified
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (reg_data['phone'], reg_data['nni'], reg_data['matricule'], 
-                      reg_data['full_name'], password_hash, reg_data['user_category'],
-                      reg_data['specific_role'], reg_data['wilaya'], reg_data['moughataa'],
-                      reg_data['school'], reg_data['is_new_school'], True))
-                
-                conn.commit()
-                conn.close()
-                
-                # Clear registration data from session
-                session.pop('registration_data', None)
-                
-                flash('تم التسجيل بنجاح! يمكنك الآن تسجيل الدخول', 'success')
-                return redirect(url_for('login'))
-                
-            except sqlite3.IntegrityError:
-                flash('حدث خطأ أثناء التسجيل', 'error')
-                conn.close()
-                return render_template('register.html')
+        # Create user directly without verification
+        password_hash = generate_password_hash(password)
+        conn.execute('''
+            INSERT INTO users (full_name, nni, phone, password_hash, user_category, wilaya, moughataa)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (full_name, nni, phone, password_hash, user_category, wilaya, moughataa))
+        
+        conn.commit()
+        conn.close()
+        
+        flash('تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول', 'success')
+        return redirect(url_for('login'))
     
     return render_template('register.html')
 
-@app.route('/verify-phone')
-def verify_phone():
-    """Phone verification page"""
-    phone = request.args.get('phone', '')
-    purpose = request.args.get('purpose', 'registration')
-    return render_template('verify_phone.html', phone=phone, purpose=purpose)
-
-@app.route('/resend-code', methods=['POST'])
-def resend_code():
-    """Resend verification code"""
-    data = request.get_json()
-    phone = data.get('phone', '').strip()
-    purpose = data.get('purpose', 'registration')
-    
-    if not validate_phone(phone):
-        return jsonify({'success': False, 'message': 'رقم الهاتف غير صحيح'})
-    
-    # Generate and send new code
-    code = generate_verification_code()
-    store_verification_code(phone, code, purpose)
-    
-    success, message = send_whatsapp_verification(phone, code, purpose)
-    return jsonify({'success': success, 'message': message})
-
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
-    """Forgot password page"""
     if request.method == 'POST':
-        step = request.form.get('step', '1')
+        phone = request.form.get('phone', '').strip()
+        new_password = request.form.get('new_password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
         
-        if step == '1':
-            # Step 1: Send verification code
-            phone = request.form.get('phone', '').strip()
-            
-            if not validate_phone(phone):
-                flash('رقم الهاتف غير صحيح', 'error')
-                return render_template('forgot_password.html')
-            
-            # Check if user exists
-            conn = get_db_connection()
-            user = conn.execute('SELECT id FROM users WHERE phone = ?', (phone,)).fetchone()
-            conn.close()
-            
-            if not user:
-                flash('لا يوجد حساب مرتبط بهذا الرقم', 'error')
-                return render_template('forgot_password.html')
-            
-            # Generate and send verification code
-            code = generate_verification_code()
-            store_verification_code(phone, code, 'password_reset')
-            
-            success, message = send_whatsapp_verification(phone, code, 'password_reset')
-            if success:
-                flash('تم إرسال رمز التحقق إلى WhatsApp الخاص بك', 'success')
-                return render_template('verify_phone.html', phone=phone, purpose='password_reset')
-            else:
-                flash(message, 'error')
-                return render_template('forgot_password.html')
+        if not validate_phone(phone):
+            flash('رقم الهاتف غير صحيح', 'error')
+            return render_template('forgot_password.html')
         
-        elif step == '2':
-            # Step 2: Verify code and reset password
-            verification_code = request.form.get('verification_code', '').strip()
-            phone = request.form.get('phone', '').strip()
-            new_password = request.form.get('new_password', '').strip()
-            confirm_password = request.form.get('confirm_password', '').strip()
-            
-            if not verification_code or len(verification_code) != 6:
-                flash('يرجى إدخال رمز التحقق المكون من 6 أرقام', 'error')
-                return render_template('reset_password.html', phone=phone)
-            
-            if len(new_password) < 6:
-                flash('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error')
-                return render_template('reset_password.html', phone=phone)
-            
-            if new_password != confirm_password:
-                flash('كلمات المرور غير متطابقة', 'error')
-                return render_template('reset_password.html', phone=phone)
-            
-            success, message = verify_code(phone, verification_code, 'password_reset')
-            if not success:
-                flash(message, 'error')
-                return render_template('reset_password.html', phone=phone)
-            
-            # Update password
-            conn = get_db_connection()
-            password_hash = generate_password_hash(new_password)
-            conn.execute(
-                'UPDATE users SET password_hash = ? WHERE phone = ?',
-                (password_hash, phone)
-            )
-            conn.commit()
+        if len(new_password) < 6:
+            flash('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error')
+            return render_template('forgot_password.html')
+        
+        if new_password != confirm_password:
+            flash('كلمات المرور غير متطابقة', 'error')
+            return render_template('forgot_password.html')
+        
+        # Check if user exists
+        conn = get_db_connection()
+        user = conn.execute('SELECT id FROM users WHERE phone = ?', (phone,)).fetchone()
+        
+        if not user:
+            flash('لا يوجد حساب مرتبط بهذا الرقم', 'error')
             conn.close()
-            
-            flash('تم تغيير كلمة المرور بنجاح! يمكنك الآن تسجيل الدخول', 'success')
-            return redirect(url_for('login'))
+            return render_template('forgot_password.html')
+        
+        # Update password directly
+        password_hash = generate_password_hash(new_password)
+        conn.execute('UPDATE users SET password_hash = ? WHERE phone = ?', (password_hash, phone))
+        conn.commit()
+        conn.close()
+        
+        flash('تم تغيير كلمة المرور بنجاح!', 'success')
+        return redirect(url_for('login'))
     
     return render_template('forgot_password.html')
 
@@ -641,10 +297,6 @@ def login():
         conn.close()
         
         if user and check_password_hash(user['password_hash'], password):
-            if not user['is_verified']:
-                flash('يجب تأكيد رقم الهاتف أولاً', 'error')
-                return render_template('login.html')
-            
             session['user_id'] = user['id']
             session['user_name'] = user['full_name']
             session['user_category'] = user['user_category']
@@ -1140,6 +792,5 @@ def submit_jeopardy_answer():
     })
 
 if __name__ == '__main__':
-    init_database()
-    init_game_database()  # Add game database initialization
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    init_db()
+    app.run(debug=True)
